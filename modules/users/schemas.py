@@ -8,7 +8,7 @@ class UserBase(BaseModel):
     role: str
 
 class UserCreate(UserBase):
-    pass
+    password: str
 
 class UserUpdate(UserBase):
     pass
@@ -18,3 +18,7 @@ class UserOut(UserBase):
 
     class Config:
         from_attributes = True  # instead of orm_mode (for Pydantic v2)
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str

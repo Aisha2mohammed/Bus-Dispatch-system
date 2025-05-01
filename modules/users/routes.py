@@ -4,9 +4,26 @@ from typing import List
 
 from modules.users import models, schemas
 from database.connection import get_db
+from auth.password_utils import hash_password  # import it
+
+
 
 router = APIRouter()
 
+@router.post("/users", response_model=schemas.UserOut)
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    hashed_pw = hash_password(user.password)
+    
+    new_user = models.User(
+        username=user.username,
+        email=user.email,
+        role=user.role,
+        hashed_password=hashed_pw
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
 
 # --------------------
 # CREATE a new user
