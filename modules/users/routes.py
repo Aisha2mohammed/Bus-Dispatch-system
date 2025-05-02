@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
+from auth.jwt_handler import get_current_user
 
 from modules.users import models, schemas
 from database.connection import get_db
@@ -20,6 +21,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         role=user.role,
         hashed_password=hashed_pw
     )
+    
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -41,7 +43,10 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 # READ all users
 # --------------------
 @router.get("/users", response_model=List[schemas.UserOut])
-def get_users(db: Session = Depends(get_db)):
+def get_users(
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(get_current_user)
+):
     return db.query(models.User).all()
 
 
