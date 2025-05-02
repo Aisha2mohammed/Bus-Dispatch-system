@@ -9,7 +9,10 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
-
+    email: EmailStr
+    role: str
+    password: str
+    
 class UserUpdate(UserBase):
     pass
 
