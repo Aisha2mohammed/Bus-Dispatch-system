@@ -1,2 +1,4 @@
 BDS-DEEPSEEK/
 __pycache__/
+# .env
+# vendor
