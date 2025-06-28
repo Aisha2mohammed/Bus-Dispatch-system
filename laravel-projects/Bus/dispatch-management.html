@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <title>Dispatch Management</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --primary-color: #3498db;
+        --secondary-color: #2c3e50;
+        --accent-color: #e74c3c;
+        --light-color: #ecf0f1;
+        --dark-color: #2c3e50;
+        --success-color: #2ecc71;
+        --warning-color: #f39c12;
+        --danger-color: #e74c3c;
+        --info-color: #3498db;
+        --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --border-radius: 8px;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        background-color: #f5f7fa;
+        color: #333;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      header {
+        background: linear-gradient(
+          135deg,
+          var(--secondary-color),
+          var(--dark-color)
+        );
+        color: white;
+        padding: 1rem 0;
+        text-align: center;
+        box-shadow: var(--shadow);
+        position: relative;
+        z-index: 100;
+      }
+
+      header h1 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+      }
+
+      nav ul {
+        list-style: none;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        padding: 0.5rem 1rem;
+      }
+
+      nav ul li a {
+        color: white;
+        text-decoration: none;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: var(--border-radius);
+        transition: all 0.3s ease;
+      }
+
+      nav ul li a:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+      }
+
+      nav ul li a.active {
+        background-color: var(--primary-color);
+      }
+
+      .notification-badge {
+        background-color: var(--accent-color);
+        color: white;
+        border-radius: 50%;
+        padding: 0.2rem 0.5rem;
+        font-size: 0.75rem;
+        margin-left: 0.3rem;
+        display: none;
+      }
+
+      main {
+        flex: 1;
+        padding: 2rem;
+      }
+
+      .container {
+        max-width: 100%;
+        margin: 0 auto;
+        background-color: white;
+        padding: 1.5rem;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+      }
+
+      .header-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #eee;
+      }
+
+      .header-container h2 {
+        color: var(--secondary-color);
+        font-size: 1.5rem;
+      }
+
+      .search-container {
+        position: relative;
+        min-width: 250px;
+        flex: 1;
+        max-width: 400px;
+      }
+
+      .search-input {
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 1px solid #ddd;
+        border-radius: var(--border-radius);
+        font-size: 1rem;
+        width: 100%;
+        transition: all 0.3s ease;
+        background-color: #f9f9f9;
+      }
+
+      .search-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        background-color: white;
+      }
+
+      .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #777;
+      }
+
+      .add-btn {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: var(--border-radius);
+        padding: 0.75rem 1.5rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        white-space: nowrap;
+      }
+
+      .add-btn:hover {
+        background-color: #2980b9;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow);
+      }
+
+      .table-container {
+        overflow-x: auto;
+        margin-top: 1.5rem;
+        border-radius: var(--border-radius);
+        box-shadow: 0 0 0 1px #eee;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 1000px;
+      }
+
+      th,
+      td {
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+      }
+
+      th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        color: var(--secondary-color);
+        position: sticky;
+        top: 0;
+      }
+
+      tr:hover {
+        background-color: #f9f9f9;
+      }
+
+      .empty-table-message {
+        padding: 2rem;
+        text-align: center;
+        color: #6c757d;
+        font-style: italic;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        padding: 0.5rem 0.75rem;
+        border: none;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+      }
+
+      .btn-sm {
+        padding: 0.35rem 0.5rem;
+        font-size: 0.75rem;
+      }
+
+      .btn-edit {
+        background-color: var(--success-color);
+        color: white;
+      }
+
+      .btn-edit:hover {
+        background-color: #27ae60;
+      }
+
+      .btn-delete {
+        background-color: var(--danger-color);
+        color: white;
+      }
+
+      .btn-delete:hover {
+        background-color: #c0392b;
+      }
+
+      .btn-notify {
+        background-color: var(--info-color);
+        color: white;
+      }
+
+      .btn-notify:hover {
+        background-color: #2980b9;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(3px);
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .modal-content {
+        background-color: white;
+        margin: 2% auto;
+        padding: 2rem;
+        border-radius: var(--border-radius);
+        width: 90%;
+        max-width: 700px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: slideDown 0.3s ease;
+      }
+
+      @keyframes slideDown {
+        from {
+          transform: translateY(-50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .close {
+        color: #aaa;
+        float: right;
+        font-size: 1.75rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: color 0.2s;
+      }
+
+      .close:hover {
+        color: #333;
+      }
+
+      .modal-header {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #eee;
+      }
+
+      .modal-header h2 {
+        color: var(--secondary-color);
+      }
+
+      .form-group {
+        margin-bottom: 1.25rem;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--secondary-color);
+      }
+
+      .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid #ddd;
+        border-radius: var(--border-radius);
+        font-size: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      .form-control:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+      }
+
+      .form-row {
+        display: flex;
+        gap: 1rem;
+      }
+
+      .form-row .form-group {
+        flex: 1;
+      }
+
+      .form-actions {
+        margin-top: 2rem;
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+      }
+
+      .btn-save {
+        background-color: var(--primary-color);
+        color: white;
+      }
+
+      .btn-save:hover {
+        background-color: #2980b9;
+      }
+
+      .btn-cancel {
+        background-color: #95a5a6;
+        color: white;
+      }
+
+      .btn-cancel:hover {
+        background-color: #7f8c8d;
+      }
+
+      .status {
+        font-weight: 600;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        display: inline-block;
+      }
+
+      .status-pending {
+        color: var(--warning-color);
+        background-color: rgba(243, 156, 18, 0.1);
+      }
+
+      .status-accepted {
+        color: var(--success-color);
+        background-color: rgba(46, 204, 113, 0.1);
+      }
+
+      .status-declined {
+        color: var(--danger-color);
+        background-color: rgba(231, 76, 60, 0.1);
+      }
+
+      .status-notified {
+        color: var(--info-color);
+        background-color: rgba(52, 152, 219, 0.1);
+      }
+
+      .status-scheduled {
+        color: #9b59b6;
+        background-color: rgba(155, 89, 182, 0.1);
+      }
+
+      .status-in-progress {
+        color: #f1c40f;
+        background-color: rgba(241, 196, 15, 0.1);
+      }
+
+      .status-completed {
+        color: var(--success-color);
+        background-color: rgba(46, 204, 113, 0.1);
+      }
+
+      .status-canceled {
+        color: var(--danger-color);
+        background-color: rgba(231, 76, 60, 0.1);
+      }
+
+      .no-results {
+        text-align: center;
+        padding: 2rem;
+        color: #6c757d;
+        font-style: italic;
+      }
+
+      footer {
+        margin-top: auto;
+        padding: 1rem;
+        background: var(--secondary-color);
+        color: white;
+        text-align: center;
+        font-size: 0.875rem;
+      }
+
+      .currency {
+        font-family: "Courier New", monospace;
+        font-weight: 600;
+      }
+
+      .response-item {
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+        transition: background-color 0.2s;
+      }
+
+      .response-item:hover {
+        background-color: #f9f9f9;
+      }
+
+      .response-item h4 {
+        margin-bottom: 0.5rem;
+        color: var(--secondary-color);
+      }
+
+      .response-item p {
+        margin-bottom: 0.25rem;
+        font-size: 0.875rem;
+      }
+
+      @media (max-width: 768px) {
+        .header-container {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .search-container {
+          max-width: 100%;
+        }
+
+        .modal-content {
+          width: 95%;
+          padding: 1.5rem;
+        }
+
+        .form-row {
+          flex-direction: column;
+          gap: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Dispatch Management</h1>
+      <nav>
+        <ul>
+          <li>
+            <a href="index.html"><i class="fas fa-home"></i> Home</a>
+          </li>
+          <li>
+            <a href="bus-management.html"
+              ><i class="fas fa-bus"></i> Bus Management</a
+            >
+          </li>
+          <li>
+            <a href="driver-management.html"
+              ><i class="fas fa-user-tie"></i> Driver Management</a
+            >
+          </li>
+          <li>
+            <a href="owner-management.html"
+              ><i class="fas fa-user-shield"></i> Vehicle Owner</a
+            >
+          </li>
+          <li>
+            <a href="#" id="notificationLink">
+              <i class="fas fa-bell"></i> Driver Responses
+              <span id="notificationBadge" class="notification-badge"></span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        <div class="header-container">
+          <h2><i class="fas fa-route"></i> Scheduled Trips</h2>
+          <div class="search-container">
+            <i class="fas fa-search search-icon"></i>
+            <input
+              type="text"
+              id="searchInput"
+              class="search-input"
+              placeholder="Search trips..."
+            />
+          </div>
+          <button class="add-btn" onclick="showAddModal()">
+            <i class="fas fa-plus"></i> Add Trip
+          </button>
+        </div>
+
+        <div class="table-container">
+          <table id="tripsTable">
+            <thead>
+              <tr>
+                <th>Starting Point</th>
+                <th>Destination</th>
+                <th>Route</th>
+                <th>Departure Time</th>
+                <th>Arrival Time</th>
+                <th>Driver</th>
+                <th>Bus Plate</th>
+                <th>Seats</th>
+                <th>Fee/Seat</th>
+                <th>Total Fare</th>
+                <th>Chaser</th>
+                <th>Status</th>
+                <th>Response</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tripsTableBody">
+              <tr>
+                <td colspan="14" class="empty-table-message">
+                  <i
+                    class="fas fa-route"
+                    style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5"
+                  ></i>
+                  <p>
+                    No trips scheduled yet. Click "Add Trip" to create a new
+                    trip.
+                  </p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="noResults" class="no-results" style="display: none">
+          <i
+            class="fas fa-search"
+            style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5"
+          ></i>
+          <p>No trips found matching your search.</p>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>&copy; 2025 Bus Station Dispatch Management System</p>
+    </footer>
+
+    <!-- Add Trip Modal -->
+    <div id="addModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <div class="modal-header">
+          <h2><i class="fas fa-plus-circle"></i> Add New Trip</h2>
+        </div>
+        <form id="addForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="addStartingPoint"
+                ><i class="fas fa-map-marker-alt"></i> Starting Point:</label
+              >
+              <input
+                type="text"
+                id="addStartingPoint"
+                class="form-control"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="addDestinationPoint"
+                ><i class="fas fa-flag-checkered"></i> Destination:</label
+              >
+              <input
+                type="text"
+                id="addDestinationPoint"
+                class="form-control"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="addRoute"><i class="fas fa-route"></i> Route:</label>
+            <input type="text" id="addRoute" class="form-control" required />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="addDepartureTime"
+                ><i class="fas fa-clock"></i> Departure Time:</label
+              >
+              <input
+                type="datetime-local"
+                id="addDepartureTime"
+                class="form-control"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="addArrivalTime"
+                ><i class="fas fa-clock"></i> Arrival Time:</label
+              >
+              <input
+                type="datetime-local"
+                id="addArrivalTime"
+                class="form-control"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="addDriverAssigned"
+                ><i class="fas fa-user-tie"></i> Driver:</label
+              >
+              <input
+                type="text"
+                id="addDriverAssigned"
+                class="form-control"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="addBusPlate"
+                ><i class="fas fa-bus"></i> Bus Plate:</label
+              >
+              <input
+                type="text"
+                id="addBusPlate"
+                class="form-control"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="addSeatingCapacity"
+                ><i class="fas fa-chair"></i> Seating Capacity:</label
+              >
+              <input
+                type="number"
+                id="addSeatingCapacity"
+                class="form-control"
+                required
+                min="1"
+              />
+            </div>
+            <div class="form-group">
+              <label for="addFeePerSeat"
+                ><i class="fas fa-dollar-sign"></i> Fee per Seat:</label
+              >
+              <input
+                type="number"
+                id="addFeePerSeat"
+                class="form-control"
+                required
+                min="0"
+                step="0.01"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="addChaserAssigned"
+              ><i class="fas fa-user"></i> Chaser:</label
+            >
+            <input
+              type="text"
+              id="addChaserAssigned"
+              class="form-control"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="addTripStatus"
+              ><i class="fas fa-info-circle"></i> Status:</label
+            >
+            <select id="addTripStatus" class="form-control" required>
+              <option value="scheduled">Scheduled</option>
+              <option value="in progress">In Progress</option>
+              <option value="completed">Completed</option>
+              <option value="canceled">Canceled</option>
+            </select>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-cancel" onclick="closeModal()">
+              <i class="fas fa-times"></i> Cancel
+            </button>
+            <button type="button" class="btn btn-save" onclick="addTrip()">
+              <i class="fas fa-save"></i> Add Trip
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <div class="modal-header">
+          <h2><i class="fas fa-edit"></i> Edit Trip Details</h2>
+        </div>
+        <form id="editForm">
+          <input type="hidden" id="editRowIndex" />
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="editStartingPoint"
+                ><i class="fas fa-map-marker-alt"></i> Starting Point:</label
+              >
+              <input
+                type="text"
+                id="editStartingPoint"
+                class="form-control"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="editDestinationPoint"
+                ><i class="fas fa-flag-checkered"></i> Destination:</label
+              >
+              <input
+                type="text"
+                id="editDestinationPoint"
+                class="form-control"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="editRoute"><i class="fas fa-route"></i> Route:</label>
+            <input type="text" id="editRoute" class="form-control" required />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="editDepartureTime"
+                ><i class="fas fa-clock"></i> Departure Time:</label
+              >
+              <input
+                type="datetime-local"
+                id="editDepartureTime"
+                class="form-control"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="editArrivalTime"
+                ><i class="fas fa-clock"></i> Arrival Time:</label
+              >
+              <input
+                type="datetime-local"
+                id="editArrivalTime"
+                class="form-control"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="editDriverAssigned"
+                ><i class="fas fa-user-tie"></i> Driver:</label
+              >
+              <input
+                type="text"
+                id="editDriverAssigned"
+                class="form-control"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="editBusPlate"
+                ><i class="fas fa-bus"></i> Bus Plate:</label
+              >
+              <input
+                type="text"
+                id="editBusPlate"
+                class="form-control"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="editSeatingCapacity"
+                ><i class="fas fa-chair"></i> Seating Capacity:</label
+              >
+              <input
+                type="number"
+                id="editSeatingCapacity"
+                class="form-control"
+                required
+                min="1"
+              />
+            </div>
+            <div class="form-group">
+              <label for="editFeePerSeat"
+                ><i class="fas fa-dollar-sign"></i> Fee per Seat:</label
+              >
+              <input
+                type="number"
+                id="editFeePerSeat"
+                class="form-control"
+                required
+                min="0"
+                step="0.01"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="editChaserAssigned"
+              ><i class="fas fa-user"></i> Chaser:</label
+            >
+            <input
+              type="text"
+              id="editChaserAssigned"
+              class="form-control"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="editTripStatus"
+              ><i class="fas fa-info-circle"></i> Status:</label
+            >
+            <select id="editTripStatus" class="form-control" required>
+              <option value="scheduled">Scheduled</option>
+              <option value="in progress">In Progress</option>
+              <option value="completed">Completed</option>
+              <option value="canceled">Canceled</option>
+            </select>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-cancel" onclick="closeModal()">
+              <i class="fas fa-times"></i> Cancel
+            </button>
+            <button type="button" class="btn btn-save" onclick="saveChanges()">
+              <i class="fas fa-save"></i> Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+      <div class="modal-content" style="max-width: 500px">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <div class="modal-header">
+          <h2><i class="fas fa-exclamation-triangle"></i> Confirm Deletion</h2>
+        </div>
+        <div style="padding: 1.5rem; text-align: center">
+          <i
+            class="fas fa-trash-alt"
+            style="
+              font-size: 3rem;
+              color: var(--danger-color);
+              margin-bottom: 1rem;
+            "
+          ></i>
+          <p style="margin-bottom: 1.5rem; font-size: 1.1rem">
+            Are you sure you want to delete this trip? This action cannot be
+            undone.
+          </p>
+          <div style="display: flex; justify-content: center; gap: 1rem">
+            <button
+              class="btn btn-cancel"
+              onclick="closeModal()"
+              style="padding: 0.75rem 1.5rem"
+            >
+              <i class="fas fa-times"></i> Cancel
+            </button>
+            <button
+              class="btn btn-delete"
+              onclick="deleteTrip()"
+              style="padding: 0.75rem 1.5rem"
+            >
+              <i class="fas fa-trash"></i> Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification Modal -->
+    <div id="notifyModal" class="modal">
+      <div class="modal-content" style="max-width: 500px">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <div class="modal-header">
+          <h2><i class="fas fa-bell"></i> Notify Driver</h2>
+        </div>
+        <div style="padding: 1.5rem">
+          <div
+            style="
+              background-color: #f8f9fa;
+              padding: 1rem;
+              border-radius: var(--border-radius);
+              margin-bottom: 1.5rem;
+            "
+          >
+            <p>
+              <strong><i class="fas fa-user-tie"></i> Driver:</strong>
+              <span id="driverName"></span>
+            </p>
+            <p>
+              <strong><i class="fas fa-route"></i> Trip:</strong>
+              <span id="tripDetails"></span>
+            </p>
+          </div>
+
+          <div style="text-align: center">
+            <button
+              class="btn btn-notify"
+              onclick="notifyDriver()"
+              style="padding: 0.75rem 1.5rem; width: 100%"
+            >
+              <i class="fas fa-bell"></i> Notify via System
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Driver Responses Modal -->
+    <div id="responsesModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <div class="modal-header">
+          <h2><i class="fas fa-bell"></i> Driver Responses</h2>
+        </div>
+        <div id="responsesList">
+          <div class="empty-notification-message">
+            <i
+              class="fas fa-bell-slash"
+              style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5"
+            ></i>
+            <p>No driver responses yet</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let currentRowToDelete = null;
+      let currentRowToNotify = null;
+      let allTrips = [];
+      let driverResponses = [];
+
+      // Initialize with empty table
+      document.addEventListener("DOMContentLoaded", function () {
+        updateNotificationBadge();
+        document
+          .getElementById("searchInput")
+          .addEventListener("input", searchTrips);
+
+        // Add some sample data for demonstration
+        addSampleData();
+      });
+
+      function addSampleData() {
+        if (allTrips.length === 0) {
+          const sampleTrips = [
+            {
+              startingPoint: "New York",
+              destination: "Boston",
+              route: "I-95",
+              departureTime: "2025-06-15T08:00",
+              arrivalTime: "2025-06-15T12:00",
+              driver: "John Smith",
+              busPlate: "ABC123",
+              seatingCapacity: 40,
+              feePerSeat: 25.5,
+              chaser: "Mike Johnson",
+              status: "scheduled",
+            },
+            {
+              startingPoint: "Los Angeles",
+              destination: "San Francisco",
+              route: "I-5",
+              departureTime: "2025-06-16T09:30",
+              arrivalTime: "2025-06-16T16:45",
+              driver: "Robert Davis",
+              busPlate: "XYZ789",
+              seatingCapacity: 50,
+              feePerSeat: 35.75,
+              chaser: "Sarah Williams",
+              status: "in progress",
+            },
+          ];
+
+          sampleTrips.forEach((trip) => {
+            // Create a temporary form with the sample data
+            document.getElementById("addStartingPoint").value =
+              trip.startingPoint;
+            document.getElementById("addDestinationPoint").value =
+              trip.destination;
+            document.getElementById("addRoute").value = trip.route;
+            document.getElementById("addDepartureTime").value =
+              trip.departureTime;
+            document.getElementById("addArrivalTime").value = trip.arrivalTime;
+            document.getElementById("addDriverAssigned").value = trip.driver;
+            document.getElementById("addBusPlate").value = trip.busPlate;
+            document.getElementById("addSeatingCapacity").value =
+              trip.seatingCapacity;
+            document.getElementById("addFeePerSeat").value = trip.feePerSeat;
+            document.getElementById("addChaserAssigned").value = trip.chaser;
+            document.getElementById("addTripStatus").value = trip.status;
+
+            // Add the trip
+            addTrip();
+          });
+        }
+      }
+
+      function searchTrips() {
+        const searchTerm = document
+          .getElementById("searchInput")
+          .value.toLowerCase();
+        const tbody = document.getElementById("tripsTableBody");
+        const noResults = document.getElementById("noResults");
+        let hasResults = false;
+
+        allTrips.forEach((trip) => {
+          const matches =
+            trip.startingPoint.toLowerCase().includes(searchTerm) ||
+            trip.destination.toLowerCase().includes(searchTerm) ||
+            trip.driver.toLowerCase().includes(searchTerm) ||
+            trip.busPlate.toLowerCase().includes(searchTerm);
+          trip.element.style.display = matches ? "" : "none";
+          if (matches) hasResults = true;
+        });
+
+        noResults.style.display = hasResults ? "none" : "block";
+      }
+
+      function showAddModal() {
+        document.getElementById("addForm").reset();
+        document.getElementById("addModal").style.display = "block";
+      }
+
+      function addTrip() {
+        const startingPoint = document
+          .getElementById("addStartingPoint")
+          .value.trim();
+        const destination = document
+          .getElementById("addDestinationPoint")
+          .value.trim();
+        const route = document.getElementById("addRoute").value.trim();
+        const departureTime = document.getElementById("addDepartureTime").value;
+        const arrivalTime = document.getElementById("addArrivalTime").value;
+        const driver = document
+          .getElementById("addDriverAssigned")
+          .value.trim();
+        const busPlate = document.getElementById("addBusPlate").value.trim();
+        const seatingCapacity = parseInt(
+          document.getElementById("addSeatingCapacity").value
+        );
+        const feePerSeat = parseFloat(
+          document.getElementById("addFeePerSeat").value
+        );
+        const totalFare = (seatingCapacity * feePerSeat).toFixed(2);
+        const chaser = document
+          .getElementById("addChaserAssigned")
+          .value.trim();
+        const status = document.getElementById("addTripStatus").value;
+
+        if (
+          !startingPoint ||
+          !destination ||
+          !route ||
+          !departureTime ||
+          !arrivalTime ||
+          !driver ||
+          !busPlate ||
+          isNaN(seatingCapacity) ||
+          isNaN(feePerSeat) ||
+          !chaser ||
+          !status
+        ) {
+          alert("Please fill in all required fields with valid values");
+          return;
+        }
+
+        const tbody = document.getElementById("tripsTableBody");
+
+        // Remove empty message if it exists
+        if (tbody.querySelector(".empty-table-message")) {
+          tbody.innerHTML = "";
+        }
+
+        const newRow = document.createElement("tr");
+
+        newRow.innerHTML = `
+                <td>${startingPoint}</td>
+                <td>${destination}</td>
+                <td>${route}</td>
+                <td>${formatDateTime(departureTime)}</td>
+                <td>${formatDateTime(arrivalTime)}</td>
+                <td>${driver}</td>
+                <td>${busPlate}</td>
+                <td>${seatingCapacity}</td>
+                <td class="currency">$${feePerSeat.toFixed(2)}</td>
+                <td class="currency">$${totalFare}</td>
+                <td>${chaser}</td>
+                <td><span class="status-${status.replace(" ", "-")}">${
+          status.charAt(0).toUpperCase() + status.slice(1)
+        }</span></td>
+                <td><span class="status-pending">Not Notified</span></td>
+                <td class="action-buttons">
+                    <button class="btn btn-edit btn-sm" onclick="editTrip(this)" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-delete btn-sm" onclick="confirmDelete(this)" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button class="btn btn-notify btn-sm" onclick="showNotifyModal(this)" title="Notify Driver">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                </td>
+            `;
+
+        tbody.appendChild(newRow);
+
+        // Add to search index
+        allTrips.push({
+          element: newRow,
+          startingPoint: startingPoint.toLowerCase(),
+          destination: destination.toLowerCase(),
+          driver: driver.toLowerCase(),
+          busPlate: busPlate.toLowerCase(),
+          rawData: {
+            startingPoint,
+            destination,
+            route,
+            departureTime,
+            arrivalTime,
+            driver,
+            busPlate,
+            seatingCapacity,
+            feePerSeat,
+            totalFare,
+            chaser,
+            status,
+          },
+        });
+
+        closeModal();
+        searchTrips();
+      }
+
+      function editTrip(button) {
+        const row = button.closest("tr");
+        const cells = row.cells;
+
+        document.getElementById("editStartingPoint").value =
+          cells[0].textContent;
+        document.getElementById("editDestinationPoint").value =
+          cells[1].textContent;
+        document.getElementById("editRoute").value = cells[2].textContent;
+        document.getElementById("editDepartureTime").value =
+          formatDateTimeForInput(cells[3].textContent);
+        document.getElementById("editArrivalTime").value =
+          formatDateTimeForInput(cells[4].textContent);
+        document.getElementById("editDriverAssigned").value =
+          cells[5].textContent;
+        document.getElementById("editBusPlate").value = cells[6].textContent;
+        document.getElementById("editSeatingCapacity").value =
+          cells[7].textContent;
+        document.getElementById("editFeePerSeat").value =
+          cells[8].textContent.replace("$", "");
+        document.getElementById("editChaserAssigned").value =
+          cells[10].textContent;
+        document.getElementById("editTripStatus").value = cells[11].textContent
+          .toLowerCase()
+          .replace("-", " ");
+
+        // Store the reference to the row being edited
+        document.getElementById("editRowIndex").value = Array.from(
+          row.parentNode.children
+        ).indexOf(row);
+
+        document.getElementById("editModal").style.display = "block";
+      }
+
+      function saveChanges() {
+        const rowIndex = document.getElementById("editRowIndex").value;
+        const table = document.getElementById("tripsTable");
+        const row = table.tBodies[0].rows[rowIndex];
+
+        // Get form values
+        const seatingCapacity = parseInt(
+          document.getElementById("editSeatingCapacity").value
+        );
+        const feePerSeat = parseFloat(
+          document.getElementById("editFeePerSeat").value
+        );
+        const totalFare = (seatingCapacity * feePerSeat).toFixed(2);
+        const status = document.getElementById("editTripStatus").value;
+
+        // Update the row data
+        row.cells[0].textContent =
+          document.getElementById("editStartingPoint").value;
+        row.cells[1].textContent = document.getElementById(
+          "editDestinationPoint"
+        ).value;
+        row.cells[2].textContent = document.getElementById("editRoute").value;
+        row.cells[3].textContent = formatDateTime(
+          document.getElementById("editDepartureTime").value
+        );
+        row.cells[4].textContent = formatDateTime(
+          document.getElementById("editArrivalTime").value
+        );
+        row.cells[5].textContent =
+          document.getElementById("editDriverAssigned").value;
+        row.cells[6].textContent =
+          document.getElementById("editBusPlate").value;
+        row.cells[7].textContent = seatingCapacity;
+        row.cells[8].textContent = `$${feePerSeat.toFixed(2)}`;
+        row.cells[9].textContent = `$${totalFare}`;
+        row.cells[10].textContent =
+          document.getElementById("editChaserAssigned").value;
+        row.cells[11].innerHTML = `<span class="status-${status.replace(
+          " ",
+          "-"
+        )}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
+
+        // Update the search index
+        allTrips[rowIndex] = {
+          element: row,
+          startingPoint: row.cells[0].textContent.toLowerCase(),
+          destination: row.cells[1].textContent.toLowerCase(),
+          driver: row.cells[5].textContent.toLowerCase(),
+          busPlate: row.cells[6].textContent.toLowerCase(),
+          rawData: {
+            startingPoint: row.cells[0].textContent,
+            destination: row.cells[1].textContent,
+            route: row.cells[2].textContent,
+            departureTime: document.getElementById("editDepartureTime").value,
+            arrivalTime: document.getElementById("editArrivalTime").value,
+            driver: row.cells[5].textContent,
+            busPlate: row.cells[6].textContent,
+            seatingCapacity: seatingCapacity,
+            feePerSeat: feePerSeat,
+            totalFare: totalFare,
+            chaser: row.cells[10].textContent,
+            status: status,
+          },
+        };
+
+        closeModal();
+        searchTrips();
+      }
+
+      function confirmDelete(button) {
+        currentRowToDelete = button.closest("tr");
+        document.getElementById("deleteModal").style.display = "block";
+      }
+
+      function deleteTrip() {
+        if (currentRowToDelete) {
+          // Find the index of the row to delete
+          const rowIndex = Array.from(
+            currentRowToDelete.parentNode.children
+          ).indexOf(currentRowToDelete);
+
+          // Remove from the DOM
+          currentRowToDelete.remove();
+
+          // Remove from our search index
+          allTrips.splice(rowIndex, 1);
+
+          // If no more trips, show empty message
+          if (allTrips.length === 0) {
+            document.getElementById("tripsTableBody").innerHTML = `
+                        <tr>
+                            <td colspan="14" class="empty-table-message">
+                                <i class="fas fa-route" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                                <p>No trips scheduled yet. Click "Add Trip" to create a new trip.</p>
+                            </td>
+                        </tr>
+                    `;
+          }
+
+          closeModal();
+          searchTrips();
+        }
+      }
+
+      function showNotifyModal(button) {
+        currentRowToNotify = button.closest("tr");
+        const driverName = currentRowToNotify.cells[5].textContent;
+        const startingPoint = currentRowToNotify.cells[0].textContent;
+        const destination = currentRowToNotify.cells[1].textContent;
+        const departureTime = currentRowToNotify.cells[3].textContent;
+
+        document.getElementById("driverName").textContent = driverName;
+        document.getElementById(
+          "tripDetails"
+        ).textContent = `${startingPoint} to ${destination} (${departureTime})`;
+
+        document.getElementById("notifyModal").style.display = "block";
+      }
+
+      function notifyDriver() {
+        if (!currentRowToNotify) return;
+
+        // Update the row to show driver has been notified
+        currentRowToNotify.cells[12].innerHTML =
+          '<span class="status-notified">Notified</span>';
+
+        // Simulate driver response after some time (for demo)
+        setTimeout(() => {
+          // Randomly decide if driver accepts or declines
+          const accepted = Math.random() > 0.3;
+          const response = {
+            tripId: allTrips.findIndex(
+              (trip) => trip.element === currentRowToNotify
+            ),
+            driver: currentRowToNotify.cells[5].textContent,
+            trip: `${currentRowToNotify.cells[0].textContent} to ${currentRowToNotify.cells[1].textContent}`,
+            status: accepted ? "Accepted" : "Declined",
+            reason: accepted ? "" : "I'm not available on that date",
+            time: new Date().toLocaleString(),
+          };
+
+          driverResponses.push(response);
+          updateNotificationBadge();
+
+          // Update the trip table
+          currentRowToNotify.cells[12].innerHTML = `<span class="status-${
+            accepted ? "accepted" : "declined"
+          }">${response.status}</span>`;
+
+          // Update responses modal
+          updateResponsesModal();
+        }, 2000);
+
+        closeModal();
+      }
+
+      function updateNotificationBadge() {
+        const badge = document.getElementById("notificationBadge");
+        if (driverResponses.length > 0) {
+          badge.textContent = driverResponses.length;
+          badge.style.display = "inline-block";
+        } else {
+          badge.style.display = "none";
+        }
+      }
+
+      function updateResponsesModal() {
+        const responsesList = document.getElementById("responsesList");
+
+        if (driverResponses.length === 0) {
+          responsesList.innerHTML = `
+                    <div class="empty-notification-message">
+                        <i class="fas fa-bell-slash" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                        <p>No driver responses yet</p>
+                    </div>
+                `;
+          return;
+        }
+
+        responsesList.innerHTML = "";
+        driverResponses.forEach((response, index) => {
+          const responseDiv = document.createElement("div");
+          responseDiv.className = "response-item";
+
+          responseDiv.innerHTML = `
+                    <h4>${response.driver} - ${response.trip}</h4>
+                    <p><strong>Status:</strong> <span class="status-${response.status.toLowerCase()}">${
+            response.status
+          }</span></p>
+                    ${
+                      response.status === "Declined"
+                        ? `<p><strong>Reason:</strong> ${response.reason}</p>`
+                        : ""
+                    }
+                    <p><strong>Time:</strong> ${response.time}</p>
+                `;
+
+          responsesList.appendChild(responseDiv);
+        });
+      }
+
+      // Show driver responses modal
+      document
+        .getElementById("notificationLink")
+        .addEventListener("click", function (e) {
+          e.preventDefault();
+          updateResponsesModal();
+          document.getElementById("responsesModal").style.display = "block";
+          // Mark notifications as read
+          driverResponses = [];
+          updateNotificationBadge();
+        });
+
+      function formatDateTime(datetimeStr) {
+        if (!datetimeStr) return "";
+        const date = new Date(datetimeStr);
+        return date.toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
+      function formatDateTimeForInput(datetimeStr) {
+        if (!datetimeStr) return "";
+        const date = new Date(datetimeStr);
+        const pad = (num) => num.toString().padStart(2, "0");
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+          date.getDate()
+        )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+      }
+
+      function closeModal() {
+        document.getElementById("addModal").style.display = "none";
+        document.getElementById("editModal").style.display = "none";
+        document.getElementById("deleteModal").style.display = "none";
+        document.getElementById("notifyModal").style.display = "none";
+        document.getElementById("responsesModal").style.display = "none";
+        currentRowToDelete = null;
+        currentRowToNotify = null;
+      }
+
+      // Close modal when clicking outside of it
+      window.onclick = function (event) {
+        if (event.target.className === "modal") {
+          closeModal();
+        }
+      };
+    </script>
+  </body>
+</html>
