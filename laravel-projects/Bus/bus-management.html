@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <title>Bus Management</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --primary-color: #3498db;
+        --secondary-color: #2c3e50;
+        --accent-color: #e74c3c;
+        --light-color: #ecf0f1;
+        --dark-color: #2c3e50;
+        --success-color: #2ecc71;
+        --warning-color: #f39c12;
+        --danger-color: #e74c3c;
+        --info-color: #3498db;
+        --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --border-radius: 8px;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        background-color: #f5f7fa;
+        color: #333;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      header {
+        background: linear-gradient(
+          135deg,
+          var(--secondary-color),
+          var(--dark-color)
+        );
+        color: white;
+        padding: 1rem 0;
+        text-align: center;
+        box-shadow: var(--shadow);
+        position: relative;
+        z-index: 100;
+      }
+
+      header h1 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+      }
+
+      nav ul {
+        list-style: none;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        padding: 0.5rem 1rem;
+      }
+
+      nav ul li a {
+        color: white;
+        text-decoration: none;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: var(--border-radius);
+        transition: all 0.3s ease;
+      }
+
+      nav ul li a:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+      }
+
+      nav ul li a.active {
+        background-color: var(--primary-color);
+      }
+
+      .notification-badge {
+        background-color: var(--accent-color);
+        color: white;
+        border-radius: 50%;
+        padding: 0.2rem 0.5rem;
+        font-size: 0.75rem;
+        margin-left: 0.3rem;
+        display: none;
+      }
+
+      main {
+        flex: 1;
+        padding: 2rem;
+      }
+
+      .container {
+        max-width: 100%;
+        margin: 0 auto;
+        background-color: white;
+        padding: 1.5rem;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+      }
+
+      .header-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #eee;
+      }
+
+      .header-container h2 {
+        color: var(--secondary-color);
+        font-size: 1.5rem;
+      }
+
+      .search-container {
+        position: relative;
+        min-width: 250px;
+        flex: 1;
+        max-width: 400px;
+      }
+
+      .search-input {
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 1px solid #ddd;
+        border-radius: var(--border-radius);
+        font-size: 1rem;
+        width: 100%;
+        transition: all 0.3s ease;
+        background-color: #f9f9f9;
+      }
+
+      .search-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        background-color: white;
+      }
+
+      .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #777;
+      }
+
+      .add-btn {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: var(--border-radius);
+        padding: 0.75rem 1.5rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        white-space: nowrap;
+      }
+
+      .add-btn:hover {
+        background-color: #2980b9;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow);
+      }
+
+      .report-btn {
+        background-color: var(--success-color);
+        color: white;
+        border: none;
+        border-radius: var(--border-radius);
+        padding: 0.75rem 1.5rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        font-weight: 500;
+      }
+
+      .report-btn:hover {
+        background-color: #27ae60;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow);
+      }
+
+      .table-container {
+        overflow-x: auto;
+        margin-top: 1.5rem;
+        border-radius: var(--border-radius);
+        box-shadow: 0 0 0 1px #eee;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 1000px;
+      }
+
+      th,
+      td {
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+      }
+
+      th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        color: var(--secondary-color);
+        position: sticky;
+        top: 0;
+      }
+
+      tr:hover {
+        background-color: #f9f9f9;
+      }
+
+      .empty-table-message {
+        padding: 2rem;
+        text-align: center;
+        color: #6c757d;
+        font-style: italic;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        padding: 0.5rem 0.75rem;
+        border: none;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+      }
+
+      .btn-sm {
+        padding: 0.35rem 0.5rem;
+        font-size: 0.75rem;
+      }
+
+      .btn-edit {
+        background-color: var(--success-color);
+        color: white;
+      }
+
+      .btn-edit:hover {
+        background-color: #27ae60;
+      }
+
+      .btn-delete {
+        background-color: var(--danger-color);
+        color: white;
+      }
+
+      .btn-delete:hover {
+        background-color: #c0392b;
+      }
+
+      .btn-view {
+        background-color: var(--info-color);
+        color: white;
+      }
+
+      .btn-view:hover {
+        background-color: #2980b9;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(3px);
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .modal-content {
+        background-color: white;
+        margin: 2% auto;
+        padding: 2rem;
+        border-radius: var(--border-radius);
+        width: 90%;
+        max-width: 700px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: slideDown 0.3s ease;
+      }
+
+      @keyframes slideDown {
+        from {
+          transform: translateY(-50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .close {
+        color: #aaa;
+        float: right;
+        font-size: 1.75rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: color 0.2s;
+      }
+
+      .close:hover {
+        color: #333;
+      }
+
+      .modal-header {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #eee;
+      }
+
+      .modal-header h2 {
+        color: var(--secondary-color);
+      }
+
+      .form-group {
+        margin-bottom: 1.25rem;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--secondary-color);
+      }
+
+      .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid #ddd;
+        border-radius: var(--border-radius);
+        font-size: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      .form-control:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+      }
+
+      .form-row {
+        display: flex;
+        gap: 1rem;
+      }
+
+      .form-row .form-group {
+        flex: 1;
+      }
+
+      .form-actions {
+        margin-top: 2rem;
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+      }
+
+      .btn-save {
+        background-color: var(--primary-color);
+        color: white;
+      }
+
+      .btn-save:hover {
+        background-color: #2980b9;
+      }
+
+      .btn-cancel {
+        background-color: #95a5a6;
+        color: white;
+      }
+
+      .btn-cancel:hover {
+        background-color: #7f8c8d;
+      }
+
+      .status {
+        font-weight: 600;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        display: inline-block;
+      }
+
+      .status-idle {
+        color: var(--success-color);
+        background-color: rgba(46, 204, 113, 0.1);
+      }
+
+      .status-on-trip {
+        color: var(--warning-color);
+        background-color: rgba(243, 156, 18, 0.1);
+      }
+
+      .status-maintenance {
+        color: var(--danger-color);
+        background-color: rgba(231, 76, 60, 0.1);
+      }
+
+      .no-results {
+        text-align: center;
+        padding: 2rem;
+        color: #6c757d;
+        font-style: italic;
+      }
+
+      footer {
+        margin-top: auto;
+        padding: 1rem;
+        background: var(--secondary-color);
+        color: white;
+        text-align: center;
+        font-size: 0.875rem;
+      }
+
+      .currency {
+        font-family: "Courier New", monospace;
+        font-weight: 600;
+      }
+
+      .response-item {
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+        transition: background-color 0.2s;
+      }
+
+      .response-item:hover {
+        background-color: #f9f9f9;
+      }
+
+      .response-item h4 {
+        margin-bottom: 0.5rem;
+        color: var(--secondary-color);
+      }
+
+      .response-item p {
+        margin-bottom: 0.25rem;
+        font-size: 0.875rem;
+      }
+
+      .report-modal {
+        text-align: center;
+      }
+
+      .report-content {
+        margin-top: 20px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: var(--border-radius);
+        background-color: #f9f9f9;
+        min-height: 100px;
+        text-align: left;
+      }
+
+      .dispatch-history {
+        margin-top: 20px;
+      }
+
+      .dispatch-history table {
+        width: 100%;
+        margin-top: 10px;
+      }
+
+      .dispatch-history th {
+        background-color: #6c757d;
+        color: white;
+      }
+
+      @media (max-width: 768px) {
+        .header-container {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .search-container {
+          max-width: 100%;
+        }
+
+        .modal-content {
+          width: 95%;
+          padding: 1.5rem;
+        }
+
+        .form-row {
+          flex-direction: column;
+          gap: 0;
+        }
+      }
+
+      .loading-message,
+      .error-message {
+        text-align: center;
+        padding: 20px;
+        color: #666;
+      }
+      .loading-message i {
+        margin-right: 10px;
+      }
+      .error-message {
+        color: #dc3545;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Bus Management</h1>
+      <nav>
+        <ul>
+          <li>
+            <a href="index.html"><i class="fas fa-home"></i> Home</a>
+          </li>
+          <li>
+            <a href="owner-management.html"
+              ><i class="fas fa-user-shield"></i> Vehicle Owners</a
+            >
+          </li>
+          <li>
+            <a href="dispatch-management.html"
+              ><i class="fas fa-route"></i> Dispatch</a
+            >
+          </li>
+          <li>
+            <a href="driver-management.html"
+              ><i class="fas fa-user-tie"></i> Drivers</a
+            >
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <div class="container">
+        <div class="header-container">
+          <h2><i class="fas fa-bus"></i> Bus Fleet</h2>
+          <div class="search-container">
+            <i class="fas fa-search search-icon"></i>
+            <input
+              type="text"
+              id="searchInput"
+              class="search-input"
+              placeholder="Search buses..."
+            />
+          </div>
+          <div style="display: flex; gap: 1rem">
+            <button class="add-btn" id="addBusBtn">
+              <i class="fas fa-plus"></i> Add Bus
+            </button>
+            <button class="report-btn" id="generateReportBtn">
+              <i class="fas fa-file-pdf"></i> Generate Report
+            </button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table id="busTable">
+            <thead>
+              <tr>
+                <th>Bus Type</th>
+                <th>Brand</th>
+                <th>Model</th>
+                <th>Year</th>
+                <th>Plate Number</th>
+                <th>Seats</th>
+                <th>Owner</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="busTableBody">
+              <tr>
+                <td colspan="9" class="empty-table-message">
+                  <i
+                    class="fas fa-bus"
+                    style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5"
+                  ></i>
+                  <p>
+                    No buses registered yet. Click "Add Bus" to register a new
+                    bus.
+                  </p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="noResults" class="no-results" style="display: none">
+          <i
+            class="fas fa-search"
+            style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5"
+          ></i>
+          <p>No buses found matching your search.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Add Bus Modal -->
+    <div id="addBusModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <div class="modal-header">
+          <h2><i class="fas fa-bus"></i> Register New Bus</h2>
+        </div>
+        <form id="busForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="busType"><i class="fas fa-bus"></i> Bus Type</label>
+              <input
+                type="text"
+                id="busType"
+                class="form-control"
+                placeholder="e.g., Coach, Minibus"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="brand"><i class="fas fa-tag"></i> Brand</label>
+              <input
+                type="text"
+                id="brand"
+                class="form-control"
+                placeholder="e.g., Mercedes, Volvo"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="model"><i class="fas fa-car"></i> Model</label>
+              <input
+                type="text"
+                id="model"
+                class="form-control"
+                placeholder="e.g., Sprinter, 9700"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="year"><i class="fas fa-calendar-alt"></i> Year</label>
+              <input
+                type="number"
+                id="year"
+                class="form-control"
+                placeholder="Manufacture year"
+                min="2000"
+                max="2025"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="plateNumber"
+                ><i class="fas fa-id-card"></i> Plate Number</label
+              >
+              <input
+                type="text"
+                id="plateNumber"
+                class="form-control"
+                placeholder="e.g., ABC123"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="seatingCapacity"
+                ><i class="fas fa-chair"></i> Seating Capacity</label
+              >
+              <input
+                type="number"
+                id="seatingCapacity"
+                class="form-control"
+                placeholder="Number of seats"
+                min="1"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="ownerName"
+              ><i class="fas fa-user-tie"></i> Owner Name</label
+            >
+            <input
+              type="text"
+              id="ownerName"
+              class="form-control"
+              placeholder="Owner's full name"
+              required
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="registrationDoc"
+                ><i class="fas fa-file-alt"></i> Registration Document</label
+              >
+              <input
+                type="file"
+                id="registrationDoc"
+                class="form-control"
+                accept=".pdf,.jpg,.png,.jpeg"
+                data-max-size="2048"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="insuranceDoc"
+                ><i class="fas fa-file-contract"></i> Insurance Document</label
+              >
+              <input
+                type="file"
+                id="insuranceDoc"
+                class="form-control"
+                accept=".pdf,.jpg,.png"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="availabilityStatus"
+              ><i class="fas fa-info-circle"></i> Availability Status</label
+            >
+            <select id="availabilityStatus" class="form-control" required>
+              <option value="idle">Idle</option>
+              <option value="on_trip">On Trip</option>
+              <option value="under_maintenance">Under Maintenance</option>
+            </select>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-cancel" id="cancelBtn">
+              <i class="fas fa-times"></i> Cancel
+            </button>
+            <button type="submit" class="btn btn-save">
+              <i class="fas fa-save"></i> Register Bus
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div id="reportModal" class="modal">
+      <div class="modal-content" style="max-width: 600px">
+        <span class="close">&times;</span>
+        <div class="modal-header">
+          <h2><i class="fas fa-file-pdf"></i> Generate Bus Report</h2>
+        </div>
+        <div style="padding: 1.5rem">
+          <div class="form-group">
+            <label for="reportPlateNumber"
+              ><i class="fas fa-id-card"></i> Enter Bus Plate Number:</label
+            >
+            <input
+              type="text"
+              id="reportPlateNumber"
+              class="form-control"
+              placeholder="e.g., ABC123"
+            />
+          </div>
+          <button class="report-btn" id="generateBtn" style="width: 100%">
+            <i class="fas fa-file-pdf"></i> Generate Report
+          </button>
+          <div class="report-content" id="reportOutput">
+            <!-- Report content will appear here -->
+          </div>
+          <div
+            class="form-actions"
+            style="justify-content: center; margin-top: 20px"
+          >
+            <button
+              class="btn btn-view"
+              id="printReportBtn"
+              style="display: none"
+            >
+              <i class="fas fa-print"></i> Print Report
+            </button>
+            <button
+              class="report-btn"
+              id="downloadReportBtn"
+              style="display: none"
+            >
+              <i class="fas fa-download"></i> Download PDF
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>&copy; 2025 Bus Station Management System</p>
+    </footer>
+
+    <script>
+      // Sample dispatch history data
+      const dispatchHistoryData = {
+        ABC123: [
+          {
+            date: "2023-05-15",
+            route: "City A to City B",
+            driver: "John Smith",
+            passengers: 45,
+          },
+          {
+            date: "2023-05-20",
+            route: "City B to City C",
+            driver: "Sarah Johnson",
+            passengers: 38,
+          },
+          {
+            date: "2023-06-01",
+            route: "City C to City A",
+            driver: "Michael Brown",
+            passengers: 42,
+          },
+        ],
+        XYZ789: [
+          {
+            date: "2023-05-18",
+            route: "Downtown Loop",
+            driver: "Robert Wilson",
+            passengers: 18,
+          },
+          {
+            date: "2023-05-25",
+            route: "Airport Shuttle",
+            driver: "Emily Davis",
+            passengers: 15,
+          },
+        ],
+        DEF456: [
+          {
+            date: "2023-05-10",
+            route: "Long Distance Express",
+            driver: "David Miller",
+            passengers: 72,
+          },
+          {
+            date: "2023-05-22",
+            route: "Intercity Service",
+            driver: "Jessica Taylor",
+            passengers: 68,
+          },
+        ],
+      };
+
+      // Modal handling
+      const addBusModal = document.getElementById("addBusModal");
+      const reportModal = document.getElementById("reportModal");
+      const addBusBtn = document.getElementById("addBusBtn");
+      const generateReportBtn = document.getElementById("generateReportBtn");
+      const cancelBtn = document.getElementById("cancelBtn");
+      const generateBtn = document.getElementById("generateBtn");
+      const closeButtons = document.querySelectorAll(".close");
+      const searchInput = document.getElementById("searchInput");
+      const busTableBody = document.getElementById("busTableBody");
+
+      // Open Add Bus Modal
+      addBusBtn.onclick = function () {
+        addBusModal.style.display = "block";
+      };
+
+      // Open Report Modal
+      generateReportBtn.onclick = function () {
+        reportModal.style.display = "block";
+        document.getElementById("reportOutput").innerHTML = "";
+        document.getElementById("printReportBtn").style.display = "none";
+        document.getElementById("downloadReportBtn").style.display = "none";
+      };
+
+      // Close modals
+      closeButtons.forEach((btn) => {
+        btn.onclick = function () {
+          addBusModal.style.display = "none";
+          reportModal.style.display = "none";
+        };
+      });
+
+      cancelBtn.onclick = function () {
+        addBusModal.style.display = "none";
+      };
+
+      // Close when clicking outside modal
+      window.onclick = function (event) {
+        if (event.target == addBusModal) {
+          addBusModal.style.display = "none";
+        }
+        if (event.target == reportModal) {
+          reportModal.style.display = "none";
+        }
+      };
+
+      // Form submission for new bus
+      document
+        .getElementById("busForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const formData = new FormData(this);
+          try {
+            const response = await fetch("/api/buses", {
+              method: "POST",
+              headers: {
+                "X-CSRF-TOKEN": document.querySelector(
+                  'meta[name="csrf-token"]'
+                ).content,
+                Accept: "application/json",
+              },
+              body: formData,
+            });
+
+            if (!response.ok) throw new Error("Server error");
+
+            const newBus = await response.json();
+
+            // Add the new bus to the table (replace your current row-adding logic)
+            addBusToTable(newBus.data);
+
+            // Close modal and reset form
+            addBusModal.style.display = "none";
+            this.reset();
+          } catch (error) {
+            console.error("Error:", error);
+            alert("Failed to save bus: " + error.message);
+          }
+        });
+
+      // New helper function to add bus from backend data
+      function addBusToTable(bus) {
+        const statusClass = {
+          idle: "status-idle",
+          on_trip: "status-on-trip",
+          under_maintenance: "status-maintenance",
+        }[bus.availabilityStatus];
+
+        const statusText = {
+          idle: "Idle",
+          on_trip: "On Trip",
+          under_maintenance: "Maintenance",
+        }[bus.availabilityStatus];
+
+        const newRow = busTableBody.insertRow();
+        newRow.innerHTML = `
+        <td>${bus.busType}</td>
+        <td>${bus.brand}</td>
+        <td>${bus.model}</td>
+        <td>${bus.year}</td>
+        <td>${bus.plateNumber}</td>
+        <td>${bus.seatingCapacity}</td>
+        <td>${bus.ownerName}</td>
+        <td><span class="${statusClass}">${statusText}</span></td>
+        <td class="action-buttons">
+            <button class="btn btn-edit btn-sm" title="Edit">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-delete btn-sm" title="Delete">
+                <i class="fas fa-trash"></i>
+            </button>
+            <button class="btn btn-view btn-sm" title="View Details">
+                <i class="fas fa-eye"></i>
+            </button>
+        </td>
+    `;
+        addRowEventListeners(newRow);
+      }
+
+      // File validation helper
+      function validateFile(input) {
+        const maxSize = input.dataset.maxSize * 1024; // KB to bytes
+        if (input.files[0].size > maxSize) {
+          alert("File too large (max 2MB)");
+          input.value = "";
+          return false;
+        }
+        return true;
+      }
+
+      // Add event listeners for file inputs
+      document
+        .getElementById("registrationDoc")
+        .addEventListener("change", function () {
+          validateFile(this);
+        });
+      document
+        .getElementById("insuranceDoc")
+        .addEventListener("change", function () {
+          validateFile(this);
+        });
+
+      // Generate report
+      generateBtn.onclick = function () {
+        const plateNumber = document
+          .getElementById("reportPlateNumber")
+          .value.trim()
+          .toUpperCase();
+        const reportOutput = document.getElementById("reportOutput");
+
+        if (!plateNumber) {
+          reportOutput.innerHTML =
+            '<p style="color: var(--danger-color);"><i class="fas fa-exclamation-circle"></i> Please enter a plate number</p>';
+          return;
+        }
+
+        // Find the bus in the table
+        let found = false;
+        const rows = busTableBody.getElementsByTagName("tr");
+
+        for (let row of rows) {
+          const cells = row.getElementsByTagName("td");
+          if (
+            cells.length > 0 &&
+            cells[4].textContent.toUpperCase() === plateNumber
+          ) {
+            found = true;
+            const reportDate = new Date().toLocaleDateString();
+
+            // Basic bus information
+            let reportHTML = `
+                        <h4 style="color: var(--secondary-color); border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+                            <i class="fas fa-bus"></i> Bus Report - ${plateNumber}
+                        </h4>
+                        <p><strong><i class="fas fa-calendar-alt"></i> Generated on:</strong> ${reportDate}</p>
+                        <hr style="border-top: 1px dashed #ddd;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <p><strong><i class="fas fa-bus"></i> Bus Type:</strong> ${cells[0].textContent}</p>
+                                <p><strong><i class="fas fa-tag"></i> Brand:</strong> ${cells[1].textContent}</p>
+                                <p><strong><i class="fas fa-car"></i> Model:</strong> ${cells[2].textContent}</p>
+                            </div>
+                            <div>
+                                <p><strong><i class="fas fa-calendar-alt"></i> Year:</strong> ${cells[3].textContent}</p>
+                                <p><strong><i class="fas fa-chair"></i> Seats:</strong> ${cells[5].textContent}</p>
+                                <p><strong><i class="fas fa-user-tie"></i> Owner:</strong> ${cells[6].textContent}</p>
+                            </div>
+                        </div>
+                        <p><strong><i class="fas fa-info-circle"></i> Current Status:</strong> ${cells[7].innerHTML}</p>
+                        <hr style="border-top: 1px dashed #ddd;">
+                    `;
+
+            // Dispatch history section
+            reportHTML += `<div class="dispatch-history">
+                        <h5 style="color: var(--secondary-color);"><i class="fas fa-route"></i> Dispatch History</h5>`;
+
+            if (
+              dispatchHistoryData[plateNumber] &&
+              dispatchHistoryData[plateNumber].length > 0
+            ) {
+              reportHTML += `<div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="background-color: var(--secondary-color); color: white;">
+                                        <th style="padding: 0.5rem;">Date</th>
+                                        <th style="padding: 0.5rem;">Route</th>
+                                        <th style="padding: 0.5rem;">Driver</th>
+                                        <th style="padding: 0.5rem;">Passengers</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+
+              dispatchHistoryData[plateNumber].forEach((trip) => {
+                reportHTML += `
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 0.5rem;">${trip.date}</td>
+                                    <td style="padding: 0.5rem;">${trip.route}</td>
+                                    <td style="padding: 0.5rem;">${trip.driver}</td>
+                                    <td style="padding: 0.5rem;">${trip.passengers}</td>
+                                </tr>`;
+              });
+
+              reportHTML += `</tbody></table></div>`;
+
+              // Calculate statistics
+              const totalTrips = dispatchHistoryData[plateNumber].length;
+              const totalPassengers = dispatchHistoryData[plateNumber].reduce(
+                (sum, trip) => sum + trip.passengers,
+                0
+              );
+              const avgPassengers = Math.round(totalPassengers / totalTrips);
+
+              reportHTML += `
+                            <div style="margin-top: 1rem; background-color: #f8f9fa; padding: 1rem; border-radius: var(--border-radius);">
+                                <p><strong><i class="fas fa-chart-line"></i> Total Trips:</strong> ${totalTrips}</p>
+                                <p><strong><i class="fas fa-users"></i> Total Passengers:</strong> ${totalPassengers}</p>
+                                <p><strong><i class="fas fa-user-friends"></i> Average Passengers:</strong> ${avgPassengers}</p>
+                            </div>`;
+            } else {
+              reportHTML += `<p style="color: #6c757d;"><i class="fas fa-info-circle"></i> No dispatch history recorded for this bus.</p>`;
+            }
+
+            reportHTML += `</div><hr style="border-top: 1px dashed #ddd;">`;
+
+            // Maintenance information
+            reportHTML += `
+                        <h5 style="color: var(--secondary-color);"><i class="fas fa-tools"></i> Maintenance Information</h5>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <p><strong><i class="fas fa-calendar-check"></i> Last Service:</strong> ${getRandomDatePast()}</p>
+                                <p><strong><i class="fas fa-calendar-plus"></i> Next Service:</strong> ${getRandomDateFuture()}</p>
+                            </div>
+                            <div>
+                                <p><strong><i class="fas fa-tachometer-alt"></i> Mileage:</strong> ${getRandomMileage()} km</p>
+                                <p><strong><i class="fas fa-car-crash"></i> Last Accident:</strong> None reported</p>
+                            </div>
+                        </div>
+                    `;
+
+            reportOutput.innerHTML = reportHTML;
+
+            document.getElementById("printReportBtn").style.display =
+              "inline-block";
+            document.getElementById("downloadReportBtn").style.display =
+              "inline-block";
+            break;
+          }
+        }
+
+        if (!found) {
+          reportOutput.innerHTML = `
+                    <p style="color: var(--danger-color);">
+                        <i class="fas fa-exclamation-triangle"></i> No bus found with plate number: ${plateNumber}
+                    </p>`;
+        }
+      };
+
+      // Helper functions for random data
+      function getRandomDatePast() {
+        const start = new Date(2022, 0, 1);
+        const end = new Date();
+        return new Date(
+          start.getTime() + Math.random() * (end.getTime() - start.getTime())
+        ).toLocaleDateString();
+      }
+
+      function getRandomDateFuture() {
+        const start = new Date();
+        const end = new Date(2024, 0, 1);
+        return new Date(
+          start.getTime() + Math.random() * (end.getTime() - start.getTime())
+        ).toLocaleDateString();
+      }
+
+      function getRandomMileage() {
+        return Math.floor(Math.random() * 50000) + 10000;
+      }
+
+      // Search functionality
+      // Replace your existing searchInput.addEventListener() with this:
+      searchInput.addEventListener("input", async function () {
+        const searchTerm = this.value.trim();
+        const noResults = document.getElementById("noResults");
+
+        // Show loading state
+        busTableBody.innerHTML =
+          '<tr><td colspan="9" class="loading-message"><i class="fas fa-spinner fa-spin"></i> Searching...</td></tr>';
+
+        try {
+          const response = await fetch(
+            `/api/buses?search=${encodeURIComponent(searchTerm)}`
+          );
+
+          if (!response.ok) throw new Error("Search failed");
+          const { data } = await response.json();
+
+          busTableBody.innerHTML = "";
+
+          if (data.length === 0) {
+            noResults.style.display = "block";
+          } else {
+            noResults.style.display = "none";
+            data.forEach((bus) => addBusToTable(bus));
+          }
+        } catch (error) {
+          console.error("Search error:", error);
+          busTableBody.innerHTML =
+            '<tr><td colspan="9" class="error-message"><i class="fas fa-exclamation-triangle"></i> Search failed. Try again.</td></tr>';
+        }
+      });
+
+      // Add event listeners to all action buttons in the table
+      function addRowEventListeners(row) {
+        const editBtn = row.querySelector("button:nth-of-type(1)");
+        const deleteBtn = row.querySelector("button:nth-of-type(2)");
+        const viewBtn = row.querySelector("button:nth-of-type(3)");
+
+        editBtn.addEventListener("click", function () {
+          alert(
+            "Edit functionality would go here for bus: " +
+              row.cells[4].textContent
+          );
+        });
+
+        deleteBtn.addEventListener("click", async function () {
+          if (!confirm("Are you sure you want to delete this bus?")) return;
+
+          try {
+            const plateNumber = row.cells[4].textContent;
+            const response = await fetch(`/api/buses/${plateNumber}`, {
+              method: "DELETE",
+              headers: {
+                "X-CSRF-TOKEN": document.querySelector(
+                  'meta[name="csrf-token"]'
+                ).content,
+              },
+            });
+
+            if (!response.ok) throw new Error("Delete failed");
+            row.remove();
+
+            // Show empty message if no buses left
+            if (busTableBody.rows.length === 0) {
+              busTableBody.innerHTML = `
+                <tr>
+                    <td colspan="9" class="empty-table-message">
+                        <i class="fas fa-bus"></i>
+                        <p>No buses registered yet.</p>
+                    </td>
+                </tr>`;
+            }
+          } catch (error) {
+            console.error("Error:", error);
+            alert("Delete failed: " + error.message);
+          }
+        });
+
+        viewBtn.addEventListener("click", function () {
+          const plateNumber = row.cells[4].textContent;
+          document.getElementById("reportPlateNumber").value = plateNumber;
+          reportModal.style.display = "block";
+          document.getElementById("generateBtn").click();
+        });
+      }
+
+      // Initialize with some sample data
+      document.addEventListener("DOMContentLoaded", function () {
+        const sampleBuses = [
+          {
+            busType: "Coach",
+            brand: "Mercedes",
+            model: "Tourismo",
+            year: "2020",
+            plateNumber: "ABC123",
+            seatingCapacity: "50",
+            ownerName: "John Smith",
+            availabilityStatus: "idle",
+          },
+          {
+            busType: "Minibus",
+            brand: "Toyota",
+            model: "Coaster",
+            year: "2021",
+            plateNumber: "XYZ789",
+            seatingCapacity: "25",
+            ownerName: "Sarah Johnson",
+            availabilityStatus: "on_trip",
+          },
+          {
+            busType: "Double Decker",
+            brand: "Volvo",
+            model: "B9TL",
+            year: "2019",
+            plateNumber: "DEF456",
+            seatingCapacity: "80",
+            ownerName: "Michael Brown",
+            availabilityStatus: "under_maintenance",
+          },
+        ];
+
+        // Remove empty row
+        const emptyRow = document.querySelector(".empty-table-message");
+        if (emptyRow) {
+          emptyRow.parentElement.parentElement.remove();
+        }
+
+        // Add sample buses
+        sampleBuses.forEach((bus) => {
+          const newRow = busTableBody.insertRow();
+
+          let statusClass = "";
+          let statusText = "";
+          switch (bus.availabilityStatus) {
+            case "idle":
+              statusClass = "status-idle";
+              statusText = "Idle";
+              break;
+            case "on_trip":
+              statusClass = "status-on-trip";
+              statusText = "On Trip";
+              break;
+            case "under_maintenance":
+              statusClass = "status-maintenance";
+              statusText = "Maintenance";
+              break;
+          }
+
+          newRow.innerHTML = `
+                    <td>${bus.busType}</td>
+                    <td>${bus.brand}</td>
+                    <td>${bus.model}</td>
+                    <td>${bus.year}</td>
+                    <td>${bus.plateNumber}</td>
+                    <td>${bus.seatingCapacity}</td>
+                    <td>${bus.ownerName}</td>
+                    <td><span class="${statusClass}">${statusText}</span></td>
+                    <td class="action-buttons">
+                        <button class="btn btn-edit btn-sm" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-delete btn-sm" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <button class="btn btn-view btn-sm" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                `;
+
+          addRowEventListeners(newRow);
+        });
+
+        // Print report button
+        document
+          .getElementById("printReportBtn")
+          .addEventListener("click", function () {
+            window.print();
+          });
+
+        // Download PDF button (mock functionality)
+        document
+          .getElementById("downloadReportBtn")
+          .addEventListener("click", function () {
+            alert("PDF download functionality would be implemented here");
+          });
+      });
+    </script>
+  </body>
+</html>
