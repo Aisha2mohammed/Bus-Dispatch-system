@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Bus Dispatch System</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --primary-color: #3498db;
+        --secondary-color: #2c3e50;
+        --accent-color: #e74c3c;
+        --light-color: #ecf0f1;
+        --dark-color: #2c3e50;
+        --success-color: #2ecc71;
+        --warning-color: #f39c12;
+        --danger-color: #e74c3c;
+        --info-color: #3498db;
+        --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --border-radius: 8px;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        background-color: #f5f7fa;
+        color: #333;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      /* Bus Animation */
+      .bus-animation {
+        position: absolute;
+        width: 100%;
+        height: 100px;
+        bottom: 0;
+        left: 0;
+        overflow: hidden;
+        z-index: 1;
+      }
+
+      .bus {
+        position: absolute;
+        width: 120px;
+        height: 60px;
+        background-color: #e74c3c;
+        border-radius: 10px;
+        animation: drive 20s linear infinite;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+      }
+
+      .bus::before {
+        content: "";
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background-color: #2c3e50;
+        border-radius: 50%;
+        bottom: -10px;
+        left: 20px;
+      }
+
+      .bus::after {
+        content: "";
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background-color: #2c3e50;
+        border-radius: 50%;
+        bottom: -10px;
+        right: 20px;
+      }
+
+      .bus-window {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background-color: #3498db;
+        border-radius: 3px;
+        left: 15px;
+        top: 10px;
+      }
+
+      .bus-window:nth-child(2) {
+        left: 45px;
+      }
+
+      .bus-window:nth-child(3) {
+        left: 75px;
+      }
+
+      @keyframes drive {
+        0% {
+          transform: translateX(-150px);
+        }
+        100% {
+          transform: translateX(calc(100vw + 150px));
+        }
+      }
+
+      .bus:nth-child(2) {
+        top: 40px;
+        animation-delay: 5s;
+        background-color: #3498db;
+      }
+
+      .bus:nth-child(3) {
+        top: 80px;
+        animation-delay: 10s;
+        background-color: #2ecc71;
+      }
+
+      .bus:nth-child(4) {
+        top: 120px;
+        animation-delay: 15s;
+        background-color: #f39c12;
+      }
+
+      /* Login Container */
+      .login-container {
+        position: relative;
+        z-index: 2;
+        max-width: 400px;
+        margin: 5% auto;
+        background-color: white;
+        padding: 2rem;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        animation: fadeIn 0.5s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .login-header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      .login-header h1 {
+        color: var(--secondary-color);
+        margin-bottom: 0.5rem;
+      }
+
+      .login-header p {
+        color: #7f8c8d;
+      }
+
+      .form-group {
+        margin-bottom: 1.25rem;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--secondary-color);
+      }
+
+      .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid #ddd;
+        border-radius: var(--border-radius);
+        font-size: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      .form-control:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+      }
+
+      .input-icon {
+        position: relative;
+      }
+
+      .input-icon i {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #7f8c8d;
+      }
+
+      .input-icon input {
+        padding-left: 2.5rem;
+      }
+
+      .btn {
+        display: block;
+        width: 100%;
+        padding: 0.75rem;
+        border: none;
+        border-radius: var(--border-radius);
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .btn-login {
+        background-color: var(--primary-color);
+        color: white;
+      }
+
+      .btn-login:hover {
+        background-color: #2980b9;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow);
+      }
+
+      .login-footer {
+        text-align: center;
+        margin-top: 1.5rem;
+        color: #7f8c8d;
+        font-size: 0.875rem;
+      }
+
+      .login-footer a {
+        color: var(--primary-color);
+        text-decoration: none;
+      }
+
+      .login-footer a:hover {
+        text-decoration: underline;
+      }
+
+      /* Error Message */
+      .error-message {
+        color: var(--danger-color);
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+        display: none;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .login-container {
+          margin: 10% auto;
+          width: 90%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Bus Animation -->
+    <div class="bus-animation">
+      <div class="bus">
+        <div class="bus-window"></div>
+        <div class="bus-window"></div>
+        <div class="bus-window"></div>
+        <i class="fas fa-bus"></i>
+      </div>
+      <div class="bus">
+        <div class="bus-window"></div>
+        <div class="bus-window"></div>
+        <div class="bus-window"></div>
+        <i class="fas fa-bus"></i>
+      </div>
+      <div class="bus">
+        <div class="bus-window"></div>
+        <div class="bus-window"></div>
+        <div class="bus-window"></div>
+        <i class="fas fa-bus"></i>
+      </div>
+      <div class="bus">
+        <div class="bus-window"></div>
+        <div class="bus-window"></div>
+        <div class="bus-window"></div>
+        <i class="fas fa-bus"></i>
+      </div>
+    </div>
+
+    <!-- Login Form -->
+    <div class="login-container">
+      <div class="login-header">
+        <h1><i class="fas fa-bus"></i> Bus Dispatch System</h1>
+        <p>Please sign in to access the dashboard</p>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group input-icon">
+          <i class="fas fa-user"></i>
+          <input
+            type="text"
+            id="username"
+            class="form-control"
+            placeholder="Username"
+            required
+          />
+        </div>
+
+        <div class="form-group input-icon">
+          <i class="fas fa-lock"></i>
+          <input
+            type="password"
+            id="password"
+            class="form-control"
+            placeholder="Password"
+            required
+          />
+          <div id="loginError" class="error-message">
+            <i class="fas fa-exclamation-circle"></i> Invalid username or
+            password
+          </div>
+        </div>
+
+        <div class="form-group">
+          <button type="submit" class="btn btn-login">
+            <i class="fas fa-sign-in-alt"></i> Login
+          </button>
+        </div>
+      </form>
+
+      <div class="login-footer">
+        <p>Don't have an account? <a href="#">Contact administrator</a></p>
+        <p><a href="#">Forgot password?</a></p>
+      </div>
+    </div>
+
+    {% comment %}
+    <script>
+      // DOM Elements
+      const loginForm = document.getElementById("loginForm");
+      const usernameInput = document.getElementById("username");
+      const passwordInput = document.getElementById("password");
+      const loginError = document.getElementById("loginError");
+
+      // Sample credentials (in a real app, this would be server-side validation)
+      const validCredentials = [
+        { username: "admin", password: "admin123", role: "admin" },
+        { username: "dispatcher", password: "dispatch123", role: "dispatcher" },
+        { username: "driver", password: "driver123", role: "driver" },
+      ];
+
+      // Form submission
+      loginForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value.trim();
+
+        // Validate credentials
+        const user = validCredentials.find(
+          (cred) => cred.username === username && cred.password === password
+        );
+
+        if (user) {
+          // Successful login (in a real app, you would set session/token here)
+          loginError.style.display = "none";
+
+          // Simulate loading
+          const loginBtn = loginForm.querySelector("button");
+          loginBtn.innerHTML =
+            '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+          loginBtn.disabled = true;
+
+          // Redirect after delay
+          setTimeout(() => {
+            window.location.href = "index.html";
+          }, 1500);
+        } else {
+          // Failed login
+          loginError.style.display = "block";
+          passwordInput.value = "";
+          passwordInput.focus();
+
+          // Add shake animation to form
+          loginForm.style.animation = "shake 0.5s";
+          setTimeout(() => {
+            loginForm.style.animation = "";
+          }, 500);
+        }
+      });
+
+      // Add shake animation
+      document.head.insertAdjacentHTML(
+        "beforeend",
+        `
+            <style>
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                    20%, 40%, 60%, 80% { transform: translateX(5px); }
+                }
+            </style>
+        `
+      );
+    </script>
+    {% endcomment %}
+
+    <script>
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const loginBtn = this.querySelector("button");
+          loginBtn.innerHTML =
+            '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+          loginBtn.disabled = true;
+
+          try {
+            const response = await fetch("/api/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                username: document.getElementById("username").value.trim(),
+                password: document.getElementById("password").value.trim(),
+              }),
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.message || "Login failed");
+            }
+
+            const { token, role, redirect } = await response.json();
+            localStorage.setItem("auth_token", token);
+
+            // Use redirect path from backend if provided
+            window.location.href =
+              redirect ||
+              (role === "admin" ? "index.html" : "driver-dashboard.html");
+          } catch (error) {
+            document.getElementById("loginError").textContent = error.message;
+            document.getElementById("loginError").style.display = "block";
+            loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+            loginBtn.disabled = false;
+            loginForm.style.animation = "shake 0.5s";
+            setTimeout(() => (loginForm.style.animation = ""), 500);
+          }
+        });
+    </script>
+  </body>
+</html>
