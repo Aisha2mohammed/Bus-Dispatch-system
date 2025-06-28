@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #35424a;
+            color: #ffffff;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        nav ul li {
+            margin: 0 15px;
+            position: relative;
+        }
+
+        nav ul li a {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        nav ul li a:hover {
+            color: #f4f4f4;
+        }
+
+        .notification-badge {
+            background-color: #ff4757;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+            margin-left: 5px;
+            display: none;
+        }
+
+        main {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .trip-list {
+            background: #ffffff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #35424a;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+
+        .empty-table-message {
+            padding: 20px;
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 5px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        .form-group textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #35424a;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .empty-notification-message {
+            padding: 20px;
+            text-align: center;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Driver Management</h1>
+        <nav>
+            <ul>
+             
+                    <a href="#" id="notificationLink">
+                        <i class="fas fa-bell"></i> Notifications
+                        <span id="notificationBadge" class="notification-badge"></span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <h2>My Trips</h2>
+        <div class="trip-list">
+            <table id="tripTable">
+                <thead>
+                    <tr>
+                        <th>Starting Point</th>
+                        <th>Destination</th>
+                        <th>Route</th>
+                        <th>Departure Time</th>
+                        <th>Arrival Time</th>
+                        <th>Bus Plate</th>
+                        <th>Chaser</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="9" class="empty-table-message">No trips assigned yet. You'll see your trips here when assigned.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Notification Modal -->
+        <div id="notificationModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Trip Notifications</h2>
+                <div class="notification-list">
+                    <div class="empty-notification-message">
+                        <i class="fas fa-bell-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
+                        <p>No new notifications</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Decline Reason Modal -->
+        <div id="declineModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Decline Trip</h2>
+                <p>Please provide a reason for declining this trip:</p>
+                <div class="form-group">
+                    <textarea id="declineReason" placeholder="Enter your reason here..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button class="btn-secondary" onclick="closeDeclineModal()">Cancel</button>
+                    <button class="btn-danger" onclick="submitDeclineReason()">Submit</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Notification handling
+        const notificationModal = document.getElementById('notificationModal');
+        const declineModal = document.getElementById('declineModal');
+        const notificationLink = document.getElementById('notificationLink');
+        const notificationBadge = document.getElementById('notificationBadge');
+        const closeButtons = document.querySelectorAll('.close');
+        let currentTripToDecline = null;
+
+        // Open Notification Modal
+        notificationLink.onclick = function(e) {
+            e.preventDefault();
+            notificationModal.style.display = 'block';
+        }
+
+        // Close modals
+        closeButtons.forEach(btn => {
+            btn.onclick = function() {
+                notificationModal.style.display = 'none';
+                declineModal.style.display = 'none';
+            }
+        });
+
+        // Close when clicking outside modal
+        window.onclick = function(event) {
+            if (event.target == notificationModal) {
+                notificationModal.style.display = 'none';
+            }
+            if (event.target == declineModal) {
+                declineModal.style.display = 'none';
+            }
+        }
+
+        // Close decline modal
+        function closeDeclineModal() {
+            declineModal.style.display = 'none';
+        }
+
+        // Submit decline reason
+        function submitDeclineReason() {
+            const reason = document.getElementById('declineReason').value;
+            if (!reason) {
+                alert('Please provide a reason for declining');
+                return;
+            }
+            
+            alert('Trip declined with reason: ' + reason);
+            document.getElementById('declineReason').value = '';
+            declineModal.style.display = 'none';
+        }
+
+        // Function to simulate new trip assignment (for demo purposes)
+        function simulateNewTripAssignment() {
+            // This would be called by the system when a new trip is assigned
+            notificationBadge.textContent = '1';
+            notificationBadge.style.display = 'inline-block';
+            
+            // Update notification modal content
+            const notificationList = document.querySelector('.notification-list');
+            notificationList.innerHTML = `
+                <div class="notification-item">
+                    <h4>New Trip Assignment</h4>
+                    <p><strong>Route:</strong> Nairobi to Mombasa via A109</p>
+                    <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+                    <p><strong>Bus:</strong> KBC 123A</p>
+                    <div class="form-actions">
+                        <button class="btn-success" onclick="acceptNotification(this)" style="background: #28a745;">
+                            <i class="fas fa-check"></i> Accept
+                        </button>
+                        <button class="btn-danger" onclick="declineNotification(this)">
+                            <i class="fas fa-times"></i> Decline
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Function to accept notification (for demo purposes)
+        function acceptNotification(button) {
+            const notificationItem = button.closest('.notification-item');
+            notificationItem.remove();
+            updateNotificationCount();
+            
+            // Update trips table
+            const tripsTable = document.getElementById('tripTable').getElementsByTagName('tbody')[0];
+            tripsTable.innerHTML = `
+                <tr>
+                    <td>Nairobi</td>
+                    <td>Mombasa</td>
+                    <td>A109 Highway</td>
+                    <td>08:00 ${new Date().toLocaleDateString()}</td>
+                    <td>14:00 ${new Date().toLocaleDateString()}</td>
+                    <td>KBC 123A</td>
+                    <td>John Doe</td>
+                    <td style="color: #ffc107; font-weight: bold;">Pending</td>
+                    <td>
+                        <button class="btn-success" onclick="acceptTrip(this)" style="background: #28a745;">
+                            <i class="fas fa-check"></i> Accept
+                        </button>
+                        <button class="btn-danger" onclick="declineTrip(this)">
+                            <i class="fas fa-times"></i> Decline
+                        </button>
+                    </td>
+                </tr>
+            `;
+            
+            alert('Trip accepted successfully!');
+        }
+
+        // Function to decline notification (for demo purposes)
+        function declineNotification(button) {
+            const notificationItem = button.closest('.notification-item');
+            currentTripToDecline = notificationItem;
+            notificationModal.style.display = 'none';
+            declineModal.style.display = 'block';
+        }
+
+        // Function to accept trip from table (for demo purposes)
+        function acceptTrip(button) {
+            const row = button.closest('tr');
+            row.cells[7].textContent = 'Accepted';
+            row.cells[7].style.color = '#28a745';
+            row.cells[7].style.fontWeight = 'bold';
+            
+            // Update actions
+            row.cells[8].innerHTML = `
+                <button class="btn-warning" onclick="startTrip(this)" style="background: #ffc107; color: #212529;">
+                    <i class="fas fa-play"></i> Start
+                </button>
+            `;
+            
+            alert('Trip accepted successfully!');
+        }
+
+        // Function to decline trip from table (for demo purposes)
+        function declineTrip(button) {
+            currentTripToDecline = button.closest('tr');
+            declineModal.style.display = 'block';
+        }
+
+        // Function to start trip (for demo purposes)
+        function startTrip(button) {
+            const row = button.closest('tr');
+            row.cells[7].textContent = 'Ongoing';
+            row.cells[7].style.color = '#17a2b8';
+            row.cells[7].style.fontWeight = 'bold';
+            
+            // Update actions
+            row.cells[8].innerHTML = `
+                <button class="btn-primary" onclick="updateTripStatus(this, 'completed')">
+                    <i class="fas fa-check-circle"></i> Complete
+                </button>
+            `;
+            
+            alert('Trip started! Safe journey!');
+        }
+
+        // Function to update trip status (for demo purposes)
+        function updateTripStatus(button, status) {
+            const row = button.closest('tr');
+            
+            if (status === 'completed') {
+                row.cells[7].textContent = 'Completed';
+                row.cells[7].style.color = '#6c757d';
+                row.cells[8].innerHTML = '';
+                alert('Trip marked as completed!');
+            }
+        }
+
+        // Function to update notification count
+        function updateNotificationCount() {
+            const notifications = document.querySelectorAll('.notification-item');
+            if (notifications.length > 0) {
+                notificationBadge.textContent = notifications.length;
+                notificationBadge.style.display = 'inline-block';
+            } else {
+                notificationBadge.style.display = 'none';
+                document.querySelector('.notification-list').innerHTML = `
+                    <div class="empty-notification-message">
+                        <i class="fas fa-bell-slash" style="font-size: 24px; margin-bottom: 10px;"></i>
+                        <p>No new notifications</p>
+                    </div>
+                `;
+            }
+        }
+
+        // For demonstration: Uncomment to simulate receiving a notification after 3 seconds
+        // setTimeout(simulateNewTripAssignment, 3000);
+    </script>
+</body>
+</html>
