@@ -1019,353 +1019,205 @@
     </div>
 
     <script>
-      let currentRowToDelete = null;
-      let currentRowToNotify = null;
-      let allTrips = [];
-      let driverResponses = [];
+          // ======================
+          // Backend Integration Fixes
+          // ======================
 
-      // Initialize with empty table
-      document.addEventListener("DOMContentLoaded", function () {
-        updateNotificationBadge();
-        document
-          .getElementById("searchInput")
-          .addEventListener("input", searchTrips);
+          // 1. CSRF Token Setup
+          const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
-        // Add some sample data for demonstration
-        addSampleData();
-      });
+          // 2. API Endpoints
+          const API = {
+              trips: '/api/trips',
+              notify: '/api/trips/notify',
+              responses: '/api/driver-responses'
+          };
 
-      function addSampleData() {
-        if (allTrips.length === 0) {
-          const sampleTrips = [
-            {
-              startingPoint: "New York",
-              destination: "Boston",
-              route: "I-95",
-              departureTime: "2025-06-15T08:00",
-              arrivalTime: "2025-06-15T12:00",
-              driver: "John Smith",
-              busPlate: "ABC123",
-              seatingCapacity: 40,
-              feePerSeat: 25.5,
-              chaser: "Mike Johnson",
-              status: "scheduled",
-            },
-            {
-              startingPoint: "Los Angeles",
-              destination: "San Francisco",
-              route: "I-5",
-              departureTime: "2025-06-16T09:30",
-              arrivalTime: "2025-06-16T16:45",
-              driver: "Robert Davis",
-              busPlate: "XYZ789",
-              seatingCapacity: 50,
-              feePerSeat: 35.75,
-              chaser: "Sarah Williams",
-              status: "in progress",
-            },
-          ];
-
-          sampleTrips.forEach((trip) => {
-            // Create a temporary form with the sample data
-            document.getElementById("addStartingPoint").value =
-              trip.startingPoint;
-            document.getElementById("addDestinationPoint").value =
-              trip.destination;
-            document.getElementById("addRoute").value = trip.route;
-            document.getElementById("addDepartureTime").value =
-              trip.departureTime;
-            document.getElementById("addArrivalTime").value = trip.arrivalTime;
-            document.getElementById("addDriverAssigned").value = trip.driver;
-            document.getElementById("addBusPlate").value = trip.busPlate;
-            document.getElementById("addSeatingCapacity").value =
-              trip.seatingCapacity;
-            document.getElementById("addFeePerSeat").value = trip.feePerSeat;
-            document.getElementById("addChaserAssigned").value = trip.chaser;
-            document.getElementById("addTripStatus").value = trip.status;
-
-            // Add the trip
-            addTrip();
+          // 3. Initialize with real data from backend
+          document.addEventListener('DOMContentLoaded', async function() {
+              await loadTrips();
+              await loadDriverResponses();
+              document.getElementById('searchInput').addEventListener('input', searchTrips);
           });
-        }
-      }
 
-      function searchTrips() {
-        const searchTerm = document
-          .getElementById("searchInput")
-          .value.toLowerCase();
-        const tbody = document.getElementById("tripsTableBody");
-        const noResults = document.getElementById("noResults");
-        let hasResults = false;
+          // 4. Load Trips from Backend
+          async function loadTrips() {
+              try {
+                  const response = await fetch(API.trips, {
+                      headers: {
+                          'Accept': 'application/json'
+                      }
+                  });
 
-        allTrips.forEach((trip) => {
-          const matches =
-            trip.startingPoint.toLowerCase().includes(searchTerm) ||
-            trip.destination.toLowerCase().includes(searchTerm) ||
-            trip.driver.toLowerCase().includes(searchTerm) ||
-            trip.busPlate.toLowerCase().includes(searchTerm);
-          trip.element.style.display = matches ? "" : "none";
-          if (matches) hasResults = true;
-        });
+                  if (!response.ok) throw new Error('Failed to load trips');
 
-        noResults.style.display = hasResults ? "none" : "block";
-      }
+                  const { data } = await response.json();
+                  allTrips = data.map(trip => createTripRow(trip));
 
-      function showAddModal() {
-        document.getElementById("addForm").reset();
-        document.getElementById("addModal").style.display = "block";
-      }
-
-      function addTrip() {
-        const startingPoint = document
-          .getElementById("addStartingPoint")
-          .value.trim();
-        const destination = document
-          .getElementById("addDestinationPoint")
-          .value.trim();
-        const route = document.getElementById("addRoute").value.trim();
-        const departureTime = document.getElementById("addDepartureTime").value;
-        const arrivalTime = document.getElementById("addArrivalTime").value;
-        const driver = document
-          .getElementById("addDriverAssigned")
-          .value.trim();
-        const busPlate = document.getElementById("addBusPlate").value.trim();
-        const seatingCapacity = parseInt(
-          document.getElementById("addSeatingCapacity").value
-        );
-        const feePerSeat = parseFloat(
-          document.getElementById("addFeePerSeat").value
-        );
-        const totalFare = (seatingCapacity * feePerSeat).toFixed(2);
-        const chaser = document
-          .getElementById("addChaserAssigned")
-          .value.trim();
-        const status = document.getElementById("addTripStatus").value;
-
-        if (
-          !startingPoint ||
-          !destination ||
-          !route ||
-          !departureTime ||
-          !arrivalTime ||
-          !driver ||
-          !busPlate ||
-          isNaN(seatingCapacity) ||
-          isNaN(feePerSeat) ||
-          !chaser ||
-          !status
-        ) {
-          alert("Please fill in all required fields with valid values");
-          return;
-        }
-
-        const tbody = document.getElementById("tripsTableBody");
-
-        // Remove empty message if it exists
-        if (tbody.querySelector(".empty-table-message")) {
-          tbody.innerHTML = "";
-        }
-
-        const newRow = document.createElement("tr");
-
-        newRow.innerHTML = `
-                <td>${startingPoint}</td>
-                <td>${destination}</td>
-                <td>${route}</td>
-                <td>${formatDateTime(departureTime)}</td>
-                <td>${formatDateTime(arrivalTime)}</td>
-                <td>${driver}</td>
-                <td>${busPlate}</td>
-                <td>${seatingCapacity}</td>
-                <td class="currency">$${feePerSeat.toFixed(2)}</td>
-                <td class="currency">$${totalFare}</td>
-                <td>${chaser}</td>
-                <td><span class="status-${status.replace(" ", "-")}">${
-          status.charAt(0).toUpperCase() + status.slice(1)
-        }</span></td>
-                <td><span class="status-pending">Not Notified</span></td>
-                <td class="action-buttons">
-                    <button class="btn btn-edit btn-sm" onclick="editTrip(this)" title="Edit">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-delete btn-sm" onclick="confirmDelete(this)" title="Delete">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                    <button class="btn btn-notify btn-sm" onclick="showNotifyModal(this)" title="Notify Driver">
-                        <i class="fas fa-bell"></i>
-                    </button>
-                </td>
-            `;
-
-        tbody.appendChild(newRow);
-
-        // Add to search index
-        allTrips.push({
-          element: newRow,
-          startingPoint: startingPoint.toLowerCase(),
-          destination: destination.toLowerCase(),
-          driver: driver.toLowerCase(),
-          busPlate: busPlate.toLowerCase(),
-          rawData: {
-            startingPoint,
-            destination,
-            route,
-            departureTime,
-            arrivalTime,
-            driver,
-            busPlate,
-            seatingCapacity,
-            feePerSeat,
-            totalFare,
-            chaser,
-            status,
-          },
-        });
-
-        closeModal();
-        searchTrips();
-      }
-
-      function editTrip(button) {
-        const row = button.closest("tr");
-        const cells = row.cells;
-
-        document.getElementById("editStartingPoint").value =
-          cells[0].textContent;
-        document.getElementById("editDestinationPoint").value =
-          cells[1].textContent;
-        document.getElementById("editRoute").value = cells[2].textContent;
-        document.getElementById("editDepartureTime").value =
-          formatDateTimeForInput(cells[3].textContent);
-        document.getElementById("editArrivalTime").value =
-          formatDateTimeForInput(cells[4].textContent);
-        document.getElementById("editDriverAssigned").value =
-          cells[5].textContent;
-        document.getElementById("editBusPlate").value = cells[6].textContent;
-        document.getElementById("editSeatingCapacity").value =
-          cells[7].textContent;
-        document.getElementById("editFeePerSeat").value =
-          cells[8].textContent.replace("$", "");
-        document.getElementById("editChaserAssigned").value =
-          cells[10].textContent;
-        document.getElementById("editTripStatus").value = cells[11].textContent
-          .toLowerCase()
-          .replace("-", " ");
-
-        // Store the reference to the row being edited
-        document.getElementById("editRowIndex").value = Array.from(
-          row.parentNode.children
-        ).indexOf(row);
-
-        document.getElementById("editModal").style.display = "block";
-      }
-
-      function saveChanges() {
-        const rowIndex = document.getElementById("editRowIndex").value;
-        const table = document.getElementById("tripsTable");
-        const row = table.tBodies[0].rows[rowIndex];
-
-        // Get form values
-        const seatingCapacity = parseInt(
-          document.getElementById("editSeatingCapacity").value
-        );
-        const feePerSeat = parseFloat(
-          document.getElementById("editFeePerSeat").value
-        );
-        const totalFare = (seatingCapacity * feePerSeat).toFixed(2);
-        const status = document.getElementById("editTripStatus").value;
-
-        // Update the row data
-        row.cells[0].textContent =
-          document.getElementById("editStartingPoint").value;
-        row.cells[1].textContent = document.getElementById(
-          "editDestinationPoint"
-        ).value;
-        row.cells[2].textContent = document.getElementById("editRoute").value;
-        row.cells[3].textContent = formatDateTime(
-          document.getElementById("editDepartureTime").value
-        );
-        row.cells[4].textContent = formatDateTime(
-          document.getElementById("editArrivalTime").value
-        );
-        row.cells[5].textContent =
-          document.getElementById("editDriverAssigned").value;
-        row.cells[6].textContent =
-          document.getElementById("editBusPlate").value;
-        row.cells[7].textContent = seatingCapacity;
-        row.cells[8].textContent = `$${feePerSeat.toFixed(2)}`;
-        row.cells[9].textContent = `$${totalFare}`;
-        row.cells[10].textContent =
-          document.getElementById("editChaserAssigned").value;
-        row.cells[11].innerHTML = `<span class="status-${status.replace(
-          " ",
-          "-"
-        )}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
-
-        // Update the search index
-        allTrips[rowIndex] = {
-          element: row,
-          startingPoint: row.cells[0].textContent.toLowerCase(),
-          destination: row.cells[1].textContent.toLowerCase(),
-          driver: row.cells[5].textContent.toLowerCase(),
-          busPlate: row.cells[6].textContent.toLowerCase(),
-          rawData: {
-            startingPoint: row.cells[0].textContent,
-            destination: row.cells[1].textContent,
-            route: row.cells[2].textContent,
-            departureTime: document.getElementById("editDepartureTime").value,
-            arrivalTime: document.getElementById("editArrivalTime").value,
-            driver: row.cells[5].textContent,
-            busPlate: row.cells[6].textContent,
-            seatingCapacity: seatingCapacity,
-            feePerSeat: feePerSeat,
-            totalFare: totalFare,
-            chaser: row.cells[10].textContent,
-            status: status,
-          },
-        };
-
-        closeModal();
-        searchTrips();
-      }
-
-      function confirmDelete(button) {
-        currentRowToDelete = button.closest("tr");
-        document.getElementById("deleteModal").style.display = "block";
-      }
-
-      function deleteTrip() {
-        if (currentRowToDelete) {
-          // Find the index of the row to delete
-          const rowIndex = Array.from(
-            currentRowToDelete.parentNode.children
-          ).indexOf(currentRowToDelete);
-
-          // Remove from the DOM
-          currentRowToDelete.remove();
-
-          // Remove from our search index
-          allTrips.splice(rowIndex, 1);
-
-          // If no more trips, show empty message
-          if (allTrips.length === 0) {
-            document.getElementById("tripsTableBody").innerHTML = `
-                        <tr>
-                            <td colspan="14" class="empty-table-message">
-                                <i class="fas fa-route" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
-                                <p>No trips scheduled yet. Click "Add Trip" to create a new trip.</p>
-                            </td>
-                        </tr>
-                    `;
+                  if (allTrips.length === 0) {
+                      showEmptyTableMessage();
+                  }
+              } catch (error) {
+                  console.error('Error loading trips:', error);
+                  alert('Failed to load trips. Please refresh the page.');
+              }
           }
 
-          closeModal();
-          searchTrips();
-        }
-      }
+          // 5. Create Trip Row from Backend Data
+          function createTripRow(trip) {
+              const row = document.createElement('tr');
+              const totalFare = (trip.seating_capacity * trip.fee_per_seat).toFixed(2);
+              const statusClass = trip.status.replace(' ', '-');
+
+              row.innerHTML = `
+                  <td>${trip.starting_point}</td>
+                  <td>${trip.destination}</td>
+                  <td>${trip.route}</td>
+                  <td>${formatDateTime(trip.departure_time)}</td>
+                  <td>${formatDateTime(trip.arrival_time)}</td>
+                  <td>${trip.driver}</td>
+                  <td>${trip.bus_plate}</td>
+                  <td>${trip.seating_capacity}</td>
+                  <td class="currency">$${trip.fee_per_seat.toFixed(2)}</td>
+                  <td class="currency">$${totalFare}</td>
+                  <td>${trip.chaser}</td>
+                  <td><span class="status-${statusClass}">${trip.status.charAt(0).toUpperCase() + trip.status.slice(1)}</span></td>
+                  <td><span class="status-${trip.notification_status || 'pending'}">${trip.notification_status ? trip.notification_status.charAt(0).toUpperCase() + trip.notification_status.slice(1) : 'Not Notified'}</span></td>
+                  <td class="action-buttons">
+                      <button class="btn btn-edit btn-sm" onclick="editTrip(this)" title="Edit">
+                          <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="btn btn-delete btn-sm" onclick="confirmDelete(this)" title="Delete">
+                          <i class="fas fa-trash"></i>
+                      </button>
+                      <button class="btn btn-notify btn-sm" onclick="showNotifyModal(this)" title="Notify Driver">
+                          <i class="fas fa-bell"></i>
+                      </button>
+                  </td>
+              `;
+
+              document.getElementById('tripsTableBody').appendChild(row);
+              return { element: row, rawData: trip };
+          }
+
+      function showAddModal() {
+            document.getElementById("addForm").reset();
+            document.getElementById("addModal").style.display = "block";
+          }
+
+          // 6. Modified Add Trip Function
+          async function addTrip() {
+              const formData = {
+                  starting_point: document.getElementById('addStartingPoint').value.trim(),
+                  destination: document.getElementById('addDestinationPoint').value.trim(),
+                  route: document.getElementById('addRoute').value.trim(),
+                  departure_time: document.getElementById('addDepartureTime').value,
+                  arrival_time: document.getElementById('addArrivalTime').value,
+                  driver: document.getElementById('addDriverAssigned').value.trim(),
+                  bus_plate: document.getElementById('addBusPlate').value.trim(),
+                  seating_capacity: parseInt(document.getElementById('addSeatingCapacity').value),
+                  fee_per_seat: parseFloat(document.getElementById('addFeePerSeat').value),
+                  chaser: document.getElementById('addChaserAssigned').value.trim(),
+                  status: document.getElementById('addTripStatus').value
+              };
+
+              try {
+                  const response = await fetch(API.trips, {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json',
+                          'X-CSRF-TOKEN': csrfToken,
+                          'Accept': 'application/json'
+                      },
+                      body: JSON.stringify(formData)
+                  });
+
+                  if (!response.ok) {
+                      const errorData = await response.json();
+                      throw new Error(errorData.message || 'Failed to add trip');
+                  }
+
+                  const { data } = await response.json();
+                  allTrips.push(createTripRow(data));
+                  closeModal();
+              } catch (error) {
+                  console.error('Error adding trip:', error);
+                  alert(error.message);
+              }
+          }
+
+          // 7. Modified Save Changes Function
+          async function saveChanges() {
+              const rowIndex = document.getElementById('editRowIndex').value;
+              const tripId = allTrips[rowIndex].rawData.id;
+
+              const formData = {
+                  starting_point: document.getElementById('editStartingPoint').value.trim(),
+                  destination: document.getElementById('editDestinationPoint').value.trim(),
+                  route: document.getElementById('editRoute').value.trim(),
+                  departure_time: document.getElementById('editDepartureTime').value,
+                  arrival_time: document.getElementById('editArrivalTime').value,
+                  driver: document.getElementById('editDriverAssigned').value.trim(),
+                  bus_plate: document.getElementById('editBusPlate').value.trim(),
+                  seating_capacity: parseInt(document.getElementById('editSeatingCapacity').value),
+                  fee_per_seat: parseFloat(document.getElementById('editFeePerSeat').value),
+                  chaser: document.getElementById('editChaserAssigned').value.trim(),
+                  status: document.getElementById('editTripStatus').value
+              };
+
+              try {
+                  const response = await fetch(`${API.trips}/${tripId}`, {
+                      method: 'PUT',
+                      headers: {
+                          'Content-Type': 'application/json',
+                          'X-CSRF-TOKEN': csrfToken,
+                          'Accept': 'application/json'
+                      },
+                      body: JSON.stringify(formData)
+                  });
+
+                  if (!response.ok) throw new Error('Failed to update trip');
+
+                  const { data } = await response.json();
+                  allTrips[rowIndex] = createTripRow(data));
+                  closeModal();
+              } catch (error) {
+                  console.error('Error updating trip:', error);
+                  alert('Failed to update trip. Please try again.');
+              }
+          }
+
+          // 8. Modified Delete Function
+          async function deleteTrip() {
+              if (!currentRowToDelete) return;
+
+              const rowIndex = Array.from(currentRowToDelete.parentNode.children).indexOf(currentRowToDelete);
+              const tripId = allTrips[rowIndex].rawData.id;
+
+              try {
+                  const response = await fetch(`${API.trips}/${tripId}`, {
+                      method: 'DELETE',
+                      headers: {
+                          'X-CSRF-TOKEN': csrfToken
+                      }
+                  });
+
+                  if (!response.ok) throw new Error('Failed to delete trip');
+
+                  currentRowToDelete.remove();
+                  allTrips.splice(rowIndex, 1);
+
+                  if (allTrips.length === 0) showEmptyTableMessage();
+                  closeModal();
+              } catch (error) {
+                  console.error('Error deleting trip:', error);
+                  alert('Failed to delete trip. Please try again.');
+              }
+          }
 
       function showNotifyModal(button) {
         currentRowToNotify = button.closest("tr");
+          currentTripId = allTrips.find(trip => trip.element === currentRowToNotify).rawData.id;.
         const driverName = currentRowToNotify.cells[5].textContent;
         const startingPoint = currentRowToNotify.cells[0].textContent;
         const destination = currentRowToNotify.cells[1].textContent;
@@ -1379,99 +1231,87 @@
         document.getElementById("notifyModal").style.display = "block";
       }
 
-      function notifyDriver() {
-        if (!currentRowToNotify) return;
 
-        // Update the row to show driver has been notified
-        currentRowToNotify.cells[12].innerHTML =
-          '<span class="status-notified">Notified</span>';
+          // 9. Modified Notify Driver Function
+          async function notifyDriver() {
+              if (!currentRowToNotify) return;
 
-        // Simulate driver response after some time (for demo)
-        setTimeout(() => {
-          // Randomly decide if driver accepts or declines
-          const accepted = Math.random() > 0.3;
-          const response = {
-            tripId: allTrips.findIndex(
-              (trip) => trip.element === currentRowToNotify
-            ),
-            driver: currentRowToNotify.cells[5].textContent,
-            trip: `${currentRowToNotify.cells[0].textContent} to ${currentRowToNotify.cells[1].textContent}`,
-            status: accepted ? "Accepted" : "Declined",
-            reason: accepted ? "" : "I'm not available on that date",
-            time: new Date().toLocaleString(),
-          };
+              const rowIndex = Array.from(currentRowToNotify.parentNode.children).indexOf(currentRowToNotify);
+              const tripId = allTrips[rowIndex].rawData.id;
 
-          driverResponses.push(response);
-          updateNotificationBadge();
+              try {
+                  const response = await fetch(API.notify, {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json',
+                          'X-CSRF-TOKEN': csrfToken
+                      },
+                      body: JSON.stringify({ trip_id: tripId })
+                  });
 
-          // Update the trip table
-          currentRowToNotify.cells[12].innerHTML = `<span class="status-${
-            accepted ? "accepted" : "declined"
-          }">${response.status}</span>`;
+                  if (!response.ok) throw new Error('Failed to notify driver');
 
-          // Update responses modal
-          updateResponsesModal();
-        }, 2000);
+                  currentRowToNotify.cells[12].innerHTML = '<span class="status-notified">Notified</span>';
+                  closeModal();
 
-        closeModal();
-      }
+                  // Poll for driver response
+                  checkDriverResponse(tripId);
+              } catch (error) {
+                  console.error('Error notifying driver:', error);
+                  alert('Failed to notify driver. Please try again.');
+              }
+          }
 
-      function updateNotificationBadge() {
-        const badge = document.getElementById("notificationBadge");
-        if (driverResponses.length > 0) {
-          badge.textContent = driverResponses.length;
-          badge.style.display = "inline-block";
-        } else {
-          badge.style.display = "none";
-        }
-      }
+          // 10. Check Driver Response
+          async function checkDriverResponse(tripId) {
+              try {
+                  const response = await fetch(`${API.responses}/${tripId}`, {
+                      headers: {
+                          'Accept': 'application/json'
+                      }
+                  });
 
-      function updateResponsesModal() {
-        const responsesList = document.getElementById("responsesList");
+                  if (response.ok) {
+                      const { data } = await response.json();
+                      if (data) {
+                          updateDriverResponse(data);
+                      } else {
+                          setTimeout(() => checkDriverResponse(tripId), 3000);
+                      }
+                  }
+              } catch (error) {
+                  console.error('Error checking driver response:', error);
+              }
+          }
 
-        if (driverResponses.length === 0) {
-          responsesList.innerHTML = `
-                    <div class="empty-notification-message">
-                        <i class="fas fa-bell-slash" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
-                        <p>No driver responses yet</p>
-                    </div>
-                `;
-          return;
-        }
+          // 11. Load Driver Responses
+          async function loadDriverResponses() {
+              try {
+                  const response = await fetch(API.responses, {
+                      headers: {
+                          'Accept': 'application/json'
+                      }
+                  });
 
-        responsesList.innerHTML = "";
-        driverResponses.forEach((response, index) => {
-          const responseDiv = document.createElement("div");
-          responseDiv.className = "response-item";
+                  if (response.ok) {
+                      const { data } = await response.json();
+                      driverResponses = data;
+                      updateNotificationBadge();
+                  }
+              } catch (error) {
+                  console.error('Error loading driver responses:', error);
+              }
+          }
 
-          responseDiv.innerHTML = `
-                    <h4>${response.driver} - ${response.trip}</h4>
-                    <p><strong>Status:</strong> <span class="status-${response.status.toLowerCase()}">${
-            response.status
-          }</span></p>
-                    ${
-                      response.status === "Declined"
-                        ? `<p><strong>Reason:</strong> ${response.reason}</p>`
-                        : ""
-                    }
-                    <p><strong>Time:</strong> ${response.time}</p>
-                `;
+          // [Keep all your existing helper functions exactly as is]
+          // (formatDateTime, closeModal, searchTrips, etc.)
 
-          responsesList.appendChild(responseDiv);
-        });
-      }
+          // ======================
+          // Security Enhancements
+          // ======================
 
-      // Show driver responses modal
-      document
-        .getElementById("notificationLink")
-        .addEventListener("click", function (e) {
-          e.preventDefault();
-          updateResponsesModal();
-          document.getElementById("responsesModal").style.display = "block";
-          // Mark notifications as read
-          driverResponses = [];
-          updateNotificationBadge();
-        });
+          // 1. Input Validation Helper
+
 
       function formatDateTime(datetimeStr) {
         if (!datetimeStr) return "";
@@ -1485,14 +1325,6 @@
         });
       }
 
-      function formatDateTimeForInput(datetimeStr) {
-        if (!datetimeStr) return "";
-        const date = new Date(datetimeStr);
-        const pad = (num) => num.toString().padStart(2, "0");
-        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-          date.getDate()
-        )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-      }
 
       function closeModal() {
         document.getElementById("addModal").style.display = "none";
@@ -1504,12 +1336,47 @@
         currentRowToNotify = null;
       }
 
-      // Close modal when clicking outside of it
-      window.onclick = function (event) {
-        if (event.target.className === "modal") {
-          closeModal();
-        }
-      };
+          function validateInput(input, type = 'text', min = null, max = null) {
+              const value = input.value.trim();
+
+              if (input.required && !value) {
+                  throw new Error(`${input.name} is required`);
+              }
+
+              if (type === 'number') {
+                  const numValue = parseFloat(value);
+                  if (isNaN(numValue)) throw new Error(`${input.name} must be a number`);
+                  if (min !== null && numValue < min) throw new Error(`${input.name} must be at least ${min}`);
+                  if (max !== null && numValue > max) throw new Error(`${input.name} must be at most ${max}`);
+              }
+
+              return type === 'number' ? parseFloat(value) : value;
+          }
+
+          // 2. Secure API Request Helper
+          async function makeApiRequest(url, method, data = null) {
+              const options = {
+                  method,
+                  headers: {
+                      'X-CSRF-TOKEN': csrfToken,
+                      'Accept': 'application/json',
+                      'Content-Type': 'application/json'
+                  }
+              };
+
+              if (data) options.body = JSON.stringify(data);
+
+              const response = await fetch(url, options);
+
+              if (!response.ok) {
+                  const errorData = await response.json();
+                  throw new Error(errorData.message || 'Request failed');
+              }
+
+              return response.json();
+          }
+
+          // [Keep all other existing functions and HTML exactly as is]
     </script>
   </body>
 </html>
