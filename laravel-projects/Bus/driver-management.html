@@ -795,41 +795,90 @@
     </footer>
 
     <script>
-      let currentRowToDelete = null;
+      const API = {
+        drivers: "/api/drivers",
+        upload: "/api/upload-license",
+      };
+
+      // Global Variables (REPLACE your existing declarations)
       let allDrivers = [];
+      let currentRowToDelete = null;
       let addLicensePhotoFile = null;
       let editLicensePhotoFile = null;
 
       // Initialize with some sample data
-      document.addEventListener("DOMContentLoaded", function () {
-        // Add sample drivers
-        addSampleDriver(
-          "John Smith",
-          "DL123456",
-          "5",
-          "+1 (555) 123-4567",
-          "https://randomuser.me/api/portraits/men/32.jpg"
-        );
-        addSampleDriver(
-          "Sarah Johnson",
-          "DL654321",
-          "8",
-          "+1 (555) 987-6543",
-          "https://randomuser.me/api/portraits/women/44.jpg"
-        );
-        addSampleDriver(
-          "Michael Brown",
-          "DL789012",
-          "3",
-          "+1 (555) 456-7890",
-          "https://randomuser.me/api/portraits/men/75.jpg"
-        );
-
-        // Set up search functionality
+      document.addEventListener("DOMContentLoaded", async function () {
+        await loadDrivers();
         document
           .getElementById("searchInput")
           .addEventListener("input", searchDrivers);
       });
+
+      /* Load drivers from backend */
+
+      async function loadDrivers() {
+        try {
+          const response = await fetch(API.drivers);
+          if (!response.ok) throw new Error("Network response was not ok");
+
+          const { data } = await response.json();
+          allDrivers = [];
+          const tbody = document.getElementById("driversTableBody");
+          tbody.innerHTML = "";
+
+          if (data.length === 0) {
+            showEmptyTableMessage();
+            return;
+          }
+
+          data.forEach((driver) => createDriverRow(driver));
+        } catch (error) {
+          console.error("Failed to load drivers:", error);
+          alert("Error loading drivers. Please refresh the page.");
+        }
+      }
+
+      /**
+       * Create a driver row from backend data
+       */
+      function createDriverRow(driver) {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+    <td>${driver.full_name}</td>
+    <td>${driver.license_number}</td>
+    <td>${driver.years_experience}</td>
+    <td>${driver.phone}</td>
+    <td>
+      ${
+        driver.license_photo_url
+          ? `<img src="${driver.license_photo_url}" class="license-photo" alt="License Photo">`
+          : '<div class="license-photo-placeholder">No photo</div>'
+      }
+    </td>
+    <td class="action-buttons">
+      <button class="btn btn-edit btn-sm" title="Edit">
+        <i class="fas fa-edit"></i>
+      </button>
+      <button class="btn btn-delete btn-sm" title="Delete">
+        <i class="fas fa-trash"></i>
+      </button>
+      <button class="btn btn-view btn-sm" title="View Details">
+        <i class="fas fa-eye"></i>
+      </button>
+    </td>
+  `;
+
+        document.getElementById("driversTableBody").appendChild(row);
+        addRowEventListeners(row);
+
+        allDrivers.push({
+          element: row,
+          id: driver.id,
+          name: driver.full_name.toLowerCase(),
+          license: driver.license_number.toLowerCase(),
+          photo: driver.license_photo_url || "",
+        });
+      }
 
       function addSampleDriver(name, license, experience, phone, photoUrl) {
         const tbody = document.getElementById("driversTableBody");
